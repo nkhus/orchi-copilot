@@ -16,47 +16,83 @@ const REPO = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const EVERY = 5 * 60 * 1000;
 const STATES = ["working", "waiting", "idle", "stuck", "free"];
 
-const POOL_SCHEMA = {
-    type: "object",
-    additionalProperties: false,
-    properties: {
-        crews: {
-            type: "array",
-            description: "Every crew of the pool, as get_sessions_status shows it now.",
-            items: {
-                type: "object",
-                required: ["name", "state"],
-                additionalProperties: false,
-                properties: {
-                    name: { type: "string", description: "The crew's session name, `[<role>] <topic>`." },
-                    session_id: { type: "string" },
-                    state: { type: "string", enum: STATES, description: "waiting = needs the user's input." },
-                    issue: { type: "integer", description: "The Issue it holds, when its claim does not show it." },
-                    doing: { type: "string", description: "What it does now, in a few plain words." },
-                    question: { type: "string", description: "Its question, while it waits for input." },
-                    background: { type: "string", description: "Its background run, while it is idle." },
-                    since: { type: "string", description: "ISO time of its last activity." },
-                    stuck: { type: "string", description: "Why it is stuck, when Orchi knows." },
-                },
-            },
-        },
-        mode: { type: "string", enum: ["on", "off"], description: "Autonomous mode." },
-        limit: { type: "integer", minimum: 1, description: "How many crews may hold work at once." },
-        questions: {
-            type: "array",
-            description: "Orchi's own open questions to the user.",
-            items: {
-                type: "object",
-                required: ["id", "text"],
-                additionalProperties: false,
-                properties: { id: { type: "string" }, text: { type: "string" } },
-            },
-        },
-        merges: { type: "array", items: { type: "integer" }, description: "PRs waiting for the user's yes to merge." },
-        deferred: { type: "array", items: { type: "integer" }, description: "Issues the user deferred." },
-        held: { type: "array", items: { type: "integer" }, description: "PRs the user put on hold." },
+const COLUMNS = ["plan", "backlog", "progress", "ask", "review", "done"];
+const KINDS = ["question", "plan", "permission", "merge", "design"];
+const SENT = 50;
+const texts = (description) => ({ type: "array", items: { type: "string" }, description });
+const object = (properties, required = []) => ({ type: "object", required, additionalProperties: false, properties });
+
+const POOL_SCHEMA = object({
+    crews: {
+        type: "array",
+        description: "Every crew of the pool, as get_sessions_status shows it now.",
+        items: object({
+            name: { type: "string", description: "The crew's session name, `[<role>] <topic>`." },
+            session_id: { type: "string" },
+            state: { type: "string", enum: STATES, description: "waiting = needs the user's input." },
+            issue: { type: "integer", description: "The Issue it holds, when its claim does not show it." },
+            doing: { type: "string", description: "What it does now, in a few plain words." },
+            question: { type: "string", description: "Its question, while it waits for input." },
+            background: { type: "string", description: "Its background run, while it is idle." },
+            since: { type: "string", description: "ISO time of its last activity." },
+            stuck: { type: "string", description: "Why it is stuck, when Orchi knows." },
+            runs: { type: "string", description: "Its model and mode, in a few words." },
+            pr: { type: "integer", description: "Its open PR." },
+            branch: { type: "string" },
+        }, ["name", "state"]),
     },
-};
+    mode: { type: "string", enum: ["on", "off"], description: "Autonomous mode." },
+    limit: { type: "integer", minimum: 1, description: "How many crews may hold work at once." },
+    questions: {
+        type: "array",
+        description:
+            "The user's open questions Orchi keeps, joined by id with those in Issue comments: give request_id while " +
+            "a crew is blocked on ask_user, and the fields of questions no comment holds yet.",
+        items: object({
+            id: { type: "string" },
+            crew: { type: "string", description: "Who asks: a crew's name, or Orchi." },
+            issue: { type: "integer", description: "The Issue or PR it is about." },
+            kind: { type: "string", enum: KINDS, description: "permission = a tool approval; only its session answers it." },
+            blocking: { type: "boolean", description: "false when the crew goes on with `assumed` meanwhile." },
+            assumed: { type: "string", description: "The answer the crew assumes until the user answers." },
+            text: { type: "string" },
+            context: texts("A few lines the user needs to answer."),
+            choices: {
+                type: "array",
+                items: object({ label: { type: "string" }, detail: { type: "string", description: "Its consequence." },
+                    recommended: { type: "boolean" } }, ["label"]),
+            },
+            plan: texts("A plan's Tasks, when kind is plan."),
+            request_id: { type: "string", description: "The exact awaiting_input or pending_plan request_id." },
+            links: { type: "array", items: object({ label: { type: "string" }, url: { type: "string" } }, ["url"]) },
+            asked: { type: "string", description: "ISO time." },
+        }, ["id"]),
+    },
+    merges: { type: "array", items: { type: "integer" }, description: "PRs waiting for the user's yes to merge." },
+    deferred: { type: "array", items: { type: "integer" }, description: "Issues the user deferred." },
+    held: { type: "array", items: { type: "integer" }, description: "PRs the user put on hold." },
+    summary: object({
+        progress: { type: "string" }, waits: { type: "string" }, risks: { type: "string" },
+        next: { type: "string" }, today: { type: "string" }, at: { type: "string", description: "ISO time." },
+    }),
+    stages: {
+        type: "object",
+        additionalProperties: { type: "string", enum: COLUMNS },
+        description: "Issue or PR number → column, only where GitHub does not show where the work is.",
+    },
+    moves: {
+        type: "array",
+        description: "Notes for a card's history; back = it came back from the user's review.",
+        items: object({ number: { type: "integer" }, to: { type: "string", enum: COLUMNS },
+            at: { type: "string" }, note: { type: "string" }, back: { type: "boolean" } }, ["number"]),
+    },
+    queue: {
+        type: "array",
+        description: "Work Orchi starts when a crew is free, in order.",
+        items: object({ issue: { type: "integer" }, action: { type: "string", enum: ["take", "plan"] },
+            title: { type: "string" } }, ["issue"]),
+    },
+});
 
 export function boardCanvas(host) {
     const instances = new Map(); // instanceId → { repo, server }
@@ -97,7 +133,8 @@ export function boardCanvas(host) {
         if (!item.running) {
             item.running = (async () => {
                 try {
-                    const document = JSON.parse(await python([SCRIPT, "--json", "--repo", repo, "--state", files(repo).state]));
+                    const document = JSON.parse(await python([SCRIPT, "--json", "--repo", repo, "--state", files(repo).state,
+                        "--previous", files(repo).snapshot]));
                     if (document.error) throw new Error(document.error);
                     item.snapshot = document;
                     item.error = null;
@@ -113,6 +150,17 @@ export function boardCanvas(host) {
         }
         await item.running;
         return item;
+    }
+
+    // An answer the user sent hides its question until Orchi writes the answer comment.
+    async function remember(repo, body) {
+        const path = files(repo).state;
+        const state = await readJson(path, {});
+        const entry = { id: String(body.id), crew: String(body.crew), question: String(body.question || "").slice(0, 500),
+            answer: String(body.choice || body.text || "").slice(0, 500), at: new Date().toISOString() };
+        state.sent = [...(state.sent || []).filter((item) => item.id !== entry.id), entry].slice(-SENT);
+        await writeJson(path, state);
+        refresh(repo);
     }
 
     function summary(item) {
@@ -153,6 +201,7 @@ export function boardCanvas(host) {
         if (method === "POST" && path === "/request") {
             const prompt = boardRequest(body);
             await host.session.send({ prompt });
+            if (body.action === "answer_question") await remember(repo, body);
             return { json: { sent: prompt } };
         }
         return null;
@@ -180,8 +229,9 @@ export function boardCanvas(host) {
                 name: "update_pool",
                 description:
                     "Report what only Orchi knows: the crews as get_sessions_status shows them, autonomous mode, the " +
-                    "pool size, Orchi's open questions, PRs waiting for the user's merge, deferred Issues, held PRs. " +
-                    "Fields you pass replace the stored ones; then the board refreshes.",
+                    "pool size, the user's open questions, PRs waiting for the user's merge, deferred Issues, held " +
+                    "PRs, the pool summary, card moves and the queue. Fields you pass replace the stored ones; then " +
+                    "the board refreshes.",
                 inputSchema: POOL_SCHEMA,
                 handler: async (ctx) => {
                     const repo = repoOf(ctx);
@@ -199,7 +249,10 @@ export function boardCanvas(host) {
                     const item = await entry(repoOf(ctx));
                     return { ...summary(item),
                         crews: (item.snapshot?.crews || []).map(({ name, state, issue, stuck }) => ({ name, state, issue, stuck })),
-                        waiting: item.snapshot?.waiting || [] };
+                        waiting: item.snapshot?.waiting || [],
+                        questions: (item.snapshot?.questions || []).map(({ id, crew, issue, kind, blocking, request_id }) =>
+                            ({ id, crew, issue, kind, blocking, request_id })),
+                        answered: item.snapshot?.answered || [] };
                 },
             },
         ],

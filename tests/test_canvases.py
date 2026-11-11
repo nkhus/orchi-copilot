@@ -54,6 +54,33 @@ console.log(JSON.stringify({
     assert 'read_picks' in result['design']
 
 
+def test_board_answers_go_through_orchi_with_the_request_id(tmp_path):
+    result = run(tmp_path, '''
+const b = requests.boardRequest;
+console.log(JSON.stringify({
+  choice: b({action: "answer_question", crew: "[dev-lead] pay", id: "q1", choice: "Stripe", note: "Keep fees low.",
+             request_id: "req-7"}),
+  free: b({action: "answer_question", crew: "Orchi", id: "q2", choice: "", text: "Wait for Monday."}),
+  none: await fail(() => b({action: "answer_question", crew: "Orchi", id: "q2"})),
+  twoLineChoice: await fail(() => b({action: "answer_question", crew: "Orchi", id: "q2", choice: "a\\nb"})),
+  approve: b({action: "approve_plan", crew: "[planner] refunds", id: "q3"}),
+  change: b({action: "change_plan", crew: "[planner] refunds", id: "q3", text: "Split #21."}),
+  back: b({action: "request_changes", pull: 30, text: "Add a test."}),
+  open: b({action: "open", crew: "[dev-lead] pay"}),
+  summary: b({action: "summary"}),
+}));''')
+    assert result['choice'].startswith('Answer question q1 of [dev-lead] pay: Stripe\nNote: Keep fees low.\n'
+                                       '(Its pending request_id: req-7.)\n\n(Sent from the Orchi board')
+    assert result['free'].startswith('Answer question q2 of Orchi: Wait for Monday.\n\n')
+    assert result['none'] == [400, 'text is required']
+    assert result['twoLineChoice'] == [400, 'choice must be one line']
+    assert result['approve'].startswith('Approve the plan [planner] refunds asked about in question q3.')
+    assert result['change'].startswith('Ask [planner] refunds to change the plan of question q3: Split #21.')
+    assert result['back'].startswith('Send PR #30 back with these changes: Add a test.')
+    assert result['open'].startswith('Open the session of [dev-lead] pay for me.')
+    assert result['summary'].startswith('Refresh the pool summary on the board.')
+
+
 def test_variant_paths_stay_inside_the_board(tmp_path):
     board = tmp_path / 'board'
     (board / 'v/r1').mkdir(parents=True)

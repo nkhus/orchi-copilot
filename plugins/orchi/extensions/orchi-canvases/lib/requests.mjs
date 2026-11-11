@@ -27,7 +27,28 @@ function line(body, key, max = 200) {
     return value;
 }
 
+function optional(body, key, read) {
+    return body[key] === undefined || body[key] === null || body[key] === "" ? "" : read(body, key);
+}
+
+function answer(b) {
+    const id = line(b, "id", 80);
+    const crew = line(b, "crew");
+    const picked = b.choice !== undefined && b.choice !== "" ? line(b, "choice", 300) : text(b, "text");
+    const request = optional(b, "request_id", (body, key) => line(body, key, 120));
+    const note = optional(b, "note", text);
+    return `Answer question ${id} of ${crew}: ${picked}` + (note ? `\nNote: ${note}` : "") +
+        (request ? `\n(Its pending request_id: ${request}.)` : "");
+}
+
 const ACTIONS = {
+    answer_question: answer,
+    approve_plan: (b) => `Approve the plan ${line(b, "crew")} asked about in question ${line(b, "id", 80)}.`,
+    change_plan: (b) => `Ask ${line(b, "crew")} to change the plan of question ${line(b, "id", 80)}: ${text(b, "text")}`,
+    request_changes: (b) => `Send PR #${number(b, "pull")} back with these changes: ${text(b, "text")}`,
+    open: (b) => `Open the session of ${line(b, "crew")} for me.`,
+    design: (b) => `Open the design board for the round of ${line(b, "crew")}.`,
+    summary: () => "Refresh the pool summary on the board.",
     answer: (b) => `Answer the question of ${line(b, "crew")}: ${text(b, "text")}`,
     reply: (b) => `About your question ${line(b, "id", 40)}: ${text(b, "text")}`,
     merge: (b) => `Merge PR #${number(b, "pull")}.`,
