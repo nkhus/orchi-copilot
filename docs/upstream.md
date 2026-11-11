@@ -18,9 +18,11 @@ Claude Code edition and is not changed from here.
 - The scripts `status.py`, `knowledge.py`, and `standards.py`, and the assets:
   Issue forms, the PR template, the documentation and standards workflows, the
   documentation templates, and the `ENGINEERING.md` template.
-- The pool reference, reduced to what holds without a standing pool: Orchi as
-  a Copilot Project, crews as child sessions, messages, autonomous mode,
-  release, stalls, follow-ups, Initiatives, and lessons.
+- The pool reference, rebuilt on the app's sessions: Orchi as a Copilot
+  Project, crews and per-task workers as child sessions, messages with a
+  purpose, questions and plans, autonomous mode with a reconcile automation,
+  Agent Merge, release, stalls, limits, updates, remote control, follow-ups,
+  Initiatives, and lessons ([pool](pool.md#decisions) says what changed).
 - The package validator, the tests that still apply, the documentation, and
   the out-of-scope records whose reasoning still holds.
 
@@ -33,7 +35,7 @@ Claude Code edition and is not changed from here.
 | `design-board.html` | Variants are opened from `.orchi-tmp/board/` for now; the visual design board comes with the canvases Epic |
 | The role sources (`skills/orchi-core/roles/`) rendered into agents | The plugin ships the custom agents directly |
 | Vendoring Hallmark and prototype | The user installs design skills ([design](design.md#design-skills)) |
-| The standing pool of crews and workers, its Claude Desktop session mechanics, and Remote Control handling | The pool Epic ([nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3)) rebuilds them on Copilot Projects |
+| Claude Desktop session mechanics: sidebar groups, start cards, title renames, `/clear`, a standing worker pool built ahead, the takeover protocol, `Background:` process lines, the bypass-mode check, Orchi's notes file, and per-session remote control | The app's sessions have none of them; [pool](pool.md#decisions) records what replaces each |
 | `CONTRIBUTING.md` | [`AGENTS.md`](../AGENTS.md) holds the contributor rules |
 
 ## Claude Code to Copilot
@@ -55,6 +57,10 @@ Claude Code edition and is not changed from here.
 | A Claude Desktop session and its sidebar group | A Copilot Project and its child sessions |
 | Crews started with a host tool | `create_session` child sessions in their own worktrees |
 | Crew messages | `send_session_message` |
+| Worker sessions cleared after each task | Per-task worker sessions started by the crew with `create_session` and archived on release |
+| Questions answered in the crew's session | `ask_user` there, mirrored in the Project; `relay_session_input`, `answer_session_input`, `respond_to_session_plan_v2` |
+| Orchi's notes file and the dashboard stall check | A reconcile automation (`save_session_automation`) and `get_sessions_status` |
+| Merging on the user's yes | `gh pr merge`, or Agent Merge (`manage_agent_merge`) when the PR cannot merge yet |
 | Remote Control | `automation.remote_control` in `.github/github-app.yml` |
 | The npx installer and its `CLAUDE.md` section | The plugin marketplace, and `setup.py` with its managed `AGENTS.md` section |
 | "Claude", "Claude Code", "Claude Desktop" | "Copilot", "the Copilot app", "the agent" |

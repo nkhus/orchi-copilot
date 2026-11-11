@@ -105,8 +105,10 @@ flowchart LR
 crew, a child session of the Project in its own worktree, named after its role
 and topic (for example `[planner] csv-export`). The Project lists its crews by
 state, and a crew's questions show in Orchi's conversation. A dev lead or
-designer crew gives every change to a writer subagent and reviews the result.
-When the work is done, Orchi archives the crew.
+designer crew gives every change to a writer subagent, or to a worker session
+of its own for parallel Tasks and long runs, and reviews the result. Agent Merge
+keeps a ready PR moving, and Orchi merges it on your yes. When the work is done,
+Orchi archives the crew.
 
 **Work moves forward on its own.** A researcher who finishes shaping an idea
 continues as its planner, and a planner continues with the first ready item it
@@ -188,7 +190,7 @@ dependencies, and PRs. Any session can restart and catch up.
 | [`orchi-standards`](plugins/orchi/skills/orchi-standards/SKILL.md) | Planner crew | Audits an existing project's checks and plans a standards Epic, or plans hardening |
 | [`orchi-design`](plugins/orchi/skills/orchi-design/SKILL.md) | Designer crew | Runs a `design` Epic with you: references, engine and direction rounds, an approved comp per surface, and the builds |
 | [`orchi-deliver`](plugins/orchi/skills/orchi-deliver/SKILL.md) | Dev lead crew | Delivers a Task, Epic, or Initiative through writer subagents, one review, and a PR; never merges into `main` itself |
-| [`orchi-work`](plugins/orchi/skills/orchi-work/SKILL.md) | A worker, when a crew's task names it | Implements, fixes, or designs one Task, or answers one research question |
+| [`orchi-work`](plugins/orchi/skills/orchi-work/SKILL.md) | A worker session, started by a crew for one task | Implements, fixes, or designs one Task, runs long checks, merges a conflicting base, or answers one research question |
 | [`orchi-core`](plugins/orchi/skills/orchi-core/SKILL.md) | Every Orchi session | The workflow: scope, readiness, execution, testing, review, knowledge, standards, and the pool |
 
 </details>

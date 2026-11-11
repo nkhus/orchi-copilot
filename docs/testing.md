@@ -77,7 +77,7 @@ and a Copilot Project for it: a read-only question, a small fix, an Epic with
 Tasks, an exploration handed to planning, and delivery with writer subagents.
 Check that:
 
-- the first message to the Project, or `/orchi`, prepares the repository in the
+- `/orchi` in the Project, or in a plain session, prepares the repository in the
   same turn: `setup.py --check` fails, a setup subagent commits `Set up Orchi`
   and pushes it, and the user is asked only what they alone can answer;
 - an idea goes to a researcher crew and a request to a planner crew, each a
@@ -103,7 +103,27 @@ Check that:
 - the slash-command menu offers only `/orchi`, and a role skill invoked without
   `--report-to` points to `/orchi` and stops;
 - after compaction, Orchi and a crew still know their role and next step, or
-  the owner's re-sent assignment restores it.
+  the owner's re-sent assignment restores it;
+- a crew starts in the kickoff's mode, never in plan mode, and its reports
+  reach Orchi with their `purpose` and `assignment_id`; a `progress` report
+  does not wake Orchi, and the same holds when Orchi is a plain session;
+- in a Project conversation, Orchi finds its checkout or `main_repo_path`, and
+  its crews land in the right repository;
+- two parallel Tasks go to two `[worker]` sessions of the dev lead, which
+  commit on their `task/<slug>` branches, report `done`, and are archived on
+  release; a `verify` worker's results reach the PR;
+- Agent Merge, turned on for a crew's session after the user's yes, finds the
+  crew's PR, asks the user to confirm `merge_pr`, repairs CI, and lands the
+  merge; with autonomous mode on, it never merges;
+- turning autonomous mode on creates the 30-minute reconcile automation, which
+  wakes Orchi, and turning it off removes it;
+- a crew question answered in Orchi's conversation of a Project, or through
+  `relay_session_input` in a plain session, reaches the crew;
+- a Cloud crew either finds Orchi's skills or reports `cannot continue`;
+- the update check finds a newer marketplace version, and
+  `copilot plugin update orchi@orchi-copilot` runs from a session;
+- accepting `automation.remote_control: true` in `.github/github-app.yml` lets
+  the user steer the pool from GitHub on the web.
 
 ## Decisions
 
