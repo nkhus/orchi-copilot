@@ -2,9 +2,12 @@
 
 Orchi is a plugin, `orchi`, in the `orchi-copilot` marketplace of this
 repository; its ID is `orchi@orchi-copilot`. The plugin holds the skills and
-custom agents. The first time Orchi starts in a repository, it prepares that
-repository with `setup.py`, which writes the labels, GitHub files, and
-instructions the workflow relies on.
+custom agents, and every workflow instruction lives there. The first time Orchi
+starts in a repository, it prepares that repository with `setup.py`, which
+writes tool-neutral development rules, documentation and standards checks, and
+the type labels. Nothing it writes names Orchi or requires it: a developer
+working with another assistant, or none, follows the same rules without knowing
+Orchi is in use.
 
 ## Requirements
 
@@ -55,33 +58,16 @@ copilot plugin marketplace remove orchi-copilot
 
 `marketplace remove` refuses while a plugin from the marketplace is installed;
 `--force` uninstalls it too. Removing the plugin leaves each repository's setup
-in place; delete the files and sections listed below by hand if a repository
-stops using Orchi.
+in place. What setup wrote is neutral and stays useful without Orchi; delete the
+files and sections listed below by hand if the team does not want them.
 
-## Repository defaults
-
-Setup writes `.github/copilot/settings.json`, so that everyone who works on the
-repository is offered Orchi:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "orchi-copilot": {"source": {"source": "github", "repo": "nkhus/orchi-copilot"}}
-  },
-  "enabledPlugins": {"orchi@orchi-copilot": true}
-}
-```
-
-Copilot merges these with each member's own settings, the repository's taking
-precedence. A member turns the default off for themselves with
-`"enabledPlugins": {"orchi@orchi-copilot": false}` in
-`.github/copilot/settings.local.json`, which is not committed, and a new
-session. Enterprise managed settings always win.
+The plugin is personal: setup does not enable it for the repository, so other
+members are not offered Orchi and need nothing to work on the repository.
 
 ## Repository setup
 
 `setup.py`, in the orchi-core skill's `scripts/` folder, prepares a repository.
-Orchi runs it through a setup subagent and commits the result
+Orchi runs it through a setup subagent and proposes the result as a pull request
 ([pool](pool.md#orchi)); it can also be run by hand from the repository root:
 
 ```bash
@@ -95,46 +81,80 @@ where `<orchi-core>` is the orchi-core skill's base directory, for example
 | --- | --- |
 | `--project PATH` | The repository to prepare; by default the Git top level of the current directory |
 | `--dry-run` | Prints each change as `Would …` and writes nothing |
-| `--check` | Like `--dry-run`, but exits 1 when anything would change; Orchi runs it on every start |
-| `--replace` | Overwrites managed files and sections someone edited, and files Orchi did not create |
-| `--no-labels` | Neither checks nor creates labels |
-| `--docs-workflow`, `--no-docs-workflow` | Writes (the default) or removes the documentation workflow and its script; the choice is kept for later runs |
-| `--standards-workflow`, `--no-standards-workflow` | Writes (the default) or removes the standards workflow and its script; the choice is kept for later runs |
+| `--check` | Like `--dry-run`, but exits 1 when a committed file or a label would change; Orchi runs it on every start |
+| `--replace` | Overwrites managed files and sections someone edited, and files setup did not create |
+| `--no-labels` | Neither checks nor changes labels |
+| `--paths` | Prints every path setup writes or removes, the earlier setup's included, and exits |
+| `--exclude` | Only adds `.orchi-tmp/` to this clone's Git exclude file, and exits |
+| `--docs-workflow`, `--no-docs-workflow` | Writes (the default) or removes the documentation check and its script |
+| `--standards-workflow`, `--no-standards-workflow` | Writes (the default) or removes the standards check and its script |
 
 It writes:
 
 | Path | Kind | Content |
 | --- | --- | --- |
-| `.github/ISSUE_TEMPLATE/orchi-{initiative,epic,task,exploration}.yml` | Managed file | The Issue forms |
-| `.github/workflows/orchi-docs.yml`, `.github/orchi/scripts/knowledge.py` | Managed files | Documentation checks on pull requests, and the script they run |
-| `.github/workflows/orchi-standards.yml`, `.github/orchi/scripts/standards.py` | Managed files | Standards checks on pull requests and the weekly drift run, and the script they run |
-| `.github/orchi/manifest.json` | Record | The digests of managed files and sections, and the workflow choices |
-| `AGENTS.md` | Managed section | `## Orchi workflow`: who runs the work, and the core rules every session follows |
-| The PR template | Managed section | Orchi's PR sections, added to the template GitHub reads first (`.github/pull_request_template.md` when there is none) |
-| `.gitignore` | Managed section | `.orchi-tmp/`, the temporary files of Orchi's sessions and subagents |
-| `.github/copilot/settings.json` | Merged | The marketplace and the enabled plugin, as above; every other value is kept |
-| `.github/github-app.yml` | Created when missing | `instructions:` that point the app's sessions to the Orchi section of `AGENTS.md` and the orchi-core skill |
+| `AGENTS.md` | Managed section | `## Development rules`: agree scope first, track work in Issues and PRs, leave taken Issues to their owner, follow `ENGINEERING.md`, update the documentation with the code, and never infer merge or deploy permission |
+| The PR template | Managed section | The Summary, Verification, and Documentation impact sections, added to the template GitHub reads first (`.github/pull_request_template.md` when there is none) |
+| `.github/workflows/docs-check.yml`, `.github/scripts/knowledge.py` | Managed files | New broken documentation links and the Documentation impact section, checked on pull requests, and the script they run |
+| `.github/workflows/standards-check.yml`, `.github/scripts/standards.py` | Managed files | The `ENGINEERING.md` checks on pull requests, and the script they run |
 
-It creates the nine labels the workflow uses (`Initiative`, `Epic`, `Task`,
-`in-progress`, `Exploration`, `needs-planning`, `delivery-ready`, `retro`,
-`design`) with `gh` when they are missing and leaves existing labels as they
-are. When `gh` cannot reach GitHub, it notes that labels were not checked and
-goes on.
+Sections sit between `<!-- managed:begin -->` and `<!-- managed:end -->`.
+None of these files name Orchi. A workflow turned off stays off: without a flag,
+a later run keeps it only while its file is present.
+
+Outside the commit, setup adds `.orchi-tmp/`, the temporary files of Orchi's
+sessions and subagents, to the clone's own exclude file
+(`git rev-parse --git-path info/exclude`); `--check` does not count it. A
+session in another clone, a Cloud crew's included, runs `setup.py --exclude`
+before it writes there.
+
+It creates the type labels `Initiative`, `Epic`, and `Task` with `gh` when they
+are missing, with neutral descriptions. When `gh` cannot reach GitHub, it notes
+that labels were not checked and goes on.
 
 A second run prints `Nothing to change.`
+
+### Migrating an earlier setup
+
+A repository prepared by an earlier setup is migrated on the next run. Setup
+recognises what it wrote then by the digests of those versions, or by the old
+manifest's record:
+
+- the Issue forms in `.github/ISSUE_TEMPLATE/orchi-*.yml`, the manifest
+  `.github/orchi/manifest.json`, and the `.gitignore` section between
+  `# orchi:begin` and `# orchi:end` are removed;
+- `.github/workflows/orchi-docs.yml` and `orchi-standards.yml`, with their
+  scripts in `.github/orchi/scripts/`, are replaced by the new pair, each kept
+  off when the manifest recorded it off;
+- the `<!-- orchi:begin -->` sections of `AGENTS.md` and the PR template are
+  replaced in place by the new sections;
+- `.github/github-app.yml` loses the instructions setup wrote, and is removed
+  when nothing else is left;
+- `.github/copilot/settings.json` loses `orchi@orchi-copilot`, and the
+  marketplace entry setup wrote when no other plugin of it remains; it is
+  removed when it ends up empty. An explicit `false` is kept, with a note;
+- the process labels (`in-progress`, `Exploration`, `needs-planning`,
+  `delivery-ready`, `retro`, `design`) are deleted when their description is
+  still the one setup wrote, after their meaning moves to the Issues: an open
+  `in-progress` Issue without an assignee is assigned to whoever runs setup, an
+  open `Exploration` Issue's title gains `Explore: `, and a `retro` Issue's
+  `Lesson: `; a `design` Issue gets a note to start its UI design field with
+  `Design Epic:`. A label whose description someone changed is kept, with a
+  note. The type labels' old descriptions are replaced.
+
+Directories left empty are removed. An old file someone edited is left in place
+with a note, except a workflow and its script, which are replaced only as a
+pair; an edited old section is a conflict like any other.
 
 ### Refusals
 
 Setup never overwrites what someone else wrote. A managed file or section that
-was edited after Orchi wrote it, a file at a managed path that Orchi did not
-create, or a `.github/copilot/settings.json` that is not valid JSON or not a JSON
-object stops the
-whole run before anything is written: it prints `Refused, nothing written` with
-the list and exits 1. `--replace` overwrites them. Malformed markers, a file that
-is not UTF-8, an unreadable manifest, and a path through a symlink are refused
-even with `--replace`. A workflow turned off after someone edited it is left in
-place, no longer managed, with a note to remove it by hand. An existing
-`.github/github-app.yml` that Orchi did not create is left as it is, with a note.
+was edited after setup wrote it, or a file at a managed path that setup did not
+create, stops the whole run before anything is written: it prints
+`Refused, nothing written` with the list and exits 1. `--replace` overwrites
+them. Malformed markers, a file that is not UTF-8, and a path through a symlink
+are refused even with `--replace`. A workflow turned off after someone edited it
+is left in place, no longer managed, with a note to remove it by hand.
 
 ## Decisions
 
@@ -169,38 +189,48 @@ and custom agents take precedence over a plugin's with the same name (the first
 one found wins; skills are matched by their `name`, agents by file name), so a
 repository with its own `orchi-*` skill or agent shadows Orchi's.
 
-### Repository defaults
+### Neutral repository footprint
 
-Setup writes `.github/copilot/settings.json` with the marketplace and the
-enabled plugin, merged into what is there, and keeps an explicit `false`: a team
-that turned Orchi off stays off. Members can still turn repository defaults off
-for themselves.
+All of Orchi's workflow instructions live in the plugin; a repository holds only
+tool-neutral development and documentation rules, so developers with other
+assistants work on it without knowing Orchi is in use, and nothing there tells
+an assistant to use Orchi or to refuse work
+([#7](https://github.com/nkhus/orchi-copilot/issues/7)). Orchi reads process
+state from standard GitHub signals instead of labels and markers
+([workflow](workflow.md#github-signals)). This reverses earlier decisions:
+
+| Earlier decision | Now |
+| --- | --- |
+| Setup wrote `.github/copilot/settings.json` so that every member was offered Orchi | The plugin is personal; setup writes no plugin settings and migration removes them |
+| Setup created `.github/github-app.yml` with instructions pointing to Orchi | Orchi's instructions come from the plugin; migration removes the ones setup wrote |
+| `AGENTS.md` held `## Orchi workflow`, routing work to Orchi | `## Development rules`, which any developer or assistant follows |
+| Setup recorded digests in `.github/orchi/manifest.json` | No record in the repository; setup recognises its versions by digest |
+| Setup wrote Issue forms `.github/ISSUE_TEMPLATE/orchi-*.yml` | The forms live in the plugin, `assets/issues/`, and Orchi builds Issue bodies from them |
+| Setup created nine labels, six of them for the process | Only the type labels `Initiative`, `Epic`, and `Task` |
+| A `.gitignore` section ignored `.orchi-tmp/` | The clone's own Git exclude file does |
+| Workflows `orchi-docs.yml` and `orchi-standards.yml`, with a weekly drift run and a `docs/work/` check | `docs-check.yml` and `standards-check.yml` on pull requests; Orchi runs the drift and `docs/work/` checks itself |
 
 ### Vendored scripts
 
 A target repository does not contain the plugin, so its CI cannot run scripts
-from it. Setup copies `knowledge.py` and `standards.py` into
-`.github/orchi/scripts/`, and the workflows run them there.
+from it. Setup copies `knowledge.py` and `standards.py` into `.github/scripts/`,
+and the workflows run them there.
 
 ### Managed files and sections
 
-Setup records the sha256 digest of every whole file and section it manages in
-`.github/orchi/manifest.json`. Sections sit between `<!-- orchi:begin -->` and
-`<!-- orchi:end -->` (`# orchi:begin` and `# orchi:end` in `.gitignore`). An
-edited file or section refuses the whole run, with nothing written, unless
-`--replace` is given.
-
-### `.github/github-app.yml`
-
-Setup creates `.github/github-app.yml` only when it is missing, and without
-markers: the app rewrites the file from its settings UI, and applies a change
-made outside the app only after the user reviews and accepts it. An existing
-file is left as it is.
+Setup keeps no record in the repository. It treats a managed file or section as
+its own when it equals the version setup ships or one whose sha256 is in
+`PREVIOUS`; anything else was edited or is someone else's, and refuses the whole
+run, with nothing written, unless `--replace` is given. Whoever changes a
+managed asset or section body adds the old version's digest to `PREVIOUS`, so
+repositories prepared with it still update. The earlier setup's files are
+recognised by the digests in `LEGACY_DIGESTS` or by its manifest.
 
 ### Labels
 
-Setup creates all nine labels the workflow uses, not only the four the pool
-needs, so planning and delivery never stop on a missing label.
+Setup creates only the type labels. In progress, ready, and needs a plan are read
+from assignees, linked pull requests and branches, sub-issues, and the plan in
+an Issue body, which every developer already sets without knowing Orchi.
 
 ### Models
 
@@ -211,8 +241,8 @@ agent as pinned; this has not been checked live.
 
 ### Worktrees
 
-The Copilot app keeps session worktrees outside the repository, so the managed
-`.gitignore` section ignores only `.orchi-tmp/`.
+The Copilot app keeps session worktrees outside the repository, so the clone's
+exclude file ignores only `.orchi-tmp/`.
 
 ### Design skills
 

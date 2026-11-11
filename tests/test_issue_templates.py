@@ -1,4 +1,4 @@
-"""The shipped issue forms are valid and give every readiness checklist item a field."""
+"""The plugin's Issue body forms are valid and give every readiness checklist item a field."""
 import re
 
 import pytest
@@ -6,7 +6,7 @@ import yaml
 
 from conftest import ASSETS, REFERENCES, read
 
-TEMPLATES = ASSETS / "github/ISSUE_TEMPLATE"
+TEMPLATES = ASSETS / "issues"
 READINESS = REFERENCES / "readiness.md"
 FIELD_TYPES = {"markdown", "textarea", "input", "dropdown", "checkboxes"}
 
@@ -55,7 +55,7 @@ INITIATIVE_FIELDS = {
 }
 
 def load(name):
-    return yaml.safe_load(read(TEMPLATES / f"orchi-{name}.yml"))
+    return yaml.safe_load(read(TEMPLATES / f"{name}.yml"))
 
 
 def flat(text):
@@ -72,14 +72,16 @@ def checklist(title):
                                          ("exploration", "Exploration")])
 def test_templates_are_valid_issue_forms(name, label):
     form = load(name)
-    assert form["name"] == f"Orchi {label}" and form["description"] and form["labels"] == [label]
+    assert form["name"] == label and form["description"]
+    assert form["labels"] == ([] if label == "Exploration" else [label])
     ids = [item["id"] for item in form["body"] if item["type"] != "markdown"]
     assert len(ids) == len(set(ids))
     for item in form["body"]:
         assert item["type"] in FIELD_TYPES
         assert item["type"] == "markdown" or item["attributes"]["label"]
-    text = read(TEMPLATES / f"orchi-{name}.yml")
+    text = read(TEMPLATES / f"{name}.yml")
     assert ".github/AGENTS.md" not in text and "docs/system" not in text
+    assert "Work reference" not in text and "Assigned to" not in text
 
 
 @pytest.mark.parametrize("name, title, mapping", [

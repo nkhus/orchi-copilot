@@ -1,8 +1,7 @@
 # Engineering
 
-<!-- Orchi template: the defaults for a TypeScript web app. Replace every <...>,
-drop rows that do not apply, and for Python take the Python column of the Orchi
-standards reference. Each row lands with the first change that needs it; a
+<!-- Template: the defaults for a TypeScript web app. Replace every <...>, drop
+rows that do not apply, and swap each tool for its equivalent on another stack. Each row lands with the first change that needs it; a
 proof of concept keeps only the core rows. Commit this file with the checks
 it declares, never ahead of them. `standards.py` reads the Checks and Exceptions tables: keep their
 columns. -->
@@ -56,8 +55,8 @@ sensitivity; budget; proof of concept or meant to last. Link the Exploration.>
 | Dependencies | pnpm audit | `pnpm audit --audit-level high` | dependencies | - | - | yes |
 | Static analysis | Semgrep CE | `semgrep scan --config p/default --error` | sast | - | - | yes |
 | Licenses | license-checker-rseidelsohn | `pnpm licenses:check` | licenses | - | - | yes |
-| Declared checks run in CI | Orchi `standards.py` | `standards.py check` | standards | - | - | yes |
-| Documentation links | Orchi `knowledge.py` | `knowledge.py lint` | documentation | docs/README.md | - | yes |
+| Declared checks run in CI | `.github/scripts/standards.py` | `standards.py check` | standards | - | - | yes |
+| Documentation links | `.github/scripts/knowledge.py` | `knowledge.py lint` | documentation | docs/README.md | - | yes |
 | Mutation | Stryker on files changed that week | `pnpm mutation` | mutation | stryker.config.json | - | weekly |
 
 `Config` lists committed configuration files, comma-separated, or `-`.

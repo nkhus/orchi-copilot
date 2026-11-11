@@ -69,11 +69,11 @@ an answer, write the open question into the Epic, so a lost session loses nothin
 
 While the first run the Epic's UI design field names is open, report `#<n> waits for #<first run>` as the pool
 reference's [Messages](../orchi-core/references/pool.md#messages) says and wait; on `#<first run> merged`, merge main into the Epic branch, so the builds start
-from its stack and screen. Then add each approved surface's build as a Task (the `orchi-task.yml` form when present):
+from its stack and screen. Then add each approved surface's build as a Task (the [Task form](../orchi-core/assets/issues/task.yml)):
 the approved comp, the surface brief, `PRODUCT.md`, the references, the `DESIGN.md` sections when one exists, the
-design engine, states, breakpoints, themes, and accessibility level, with `orchi-designer` as the writer. When the
+design engine, states, breakpoints, themes, and accessibility level, with `design` as the suggested writer. When the
 stack lacks the component library the surfaces need (SmoothUI and its shadcn MCP server for React with Tailwind CSS 4
-and shadcn/ui), the first Task adds it, with `orchi-implementer` as the writer. Check each Task against the Task
+and shadcn/ui), the first Task adds it, with `implementation` as the suggested writer. Check each Task against the Task
 readiness checklist. After the last build, and before the PR is marked ready, write or replace `DESIGN.md` from the
 built surfaces with the user and commit it: `Design engine: <Hallmark | prototype>` on its first line after the title,
 the references, and the system (colour, type, spacing, components, motion) as built; in a Hallmark project, in

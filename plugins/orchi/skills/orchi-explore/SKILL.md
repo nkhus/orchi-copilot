@@ -34,8 +34,8 @@ its own branch, `explore/<slug>`, holds only its working folder.
 
 ## 2. Phases
 
-Run the reference's phases in order: Frame (create the Issue, with
-`orchi-exploration.yml` when the repository has it, and the `explore/<slug>`
+Run the reference's phases in order: Frame (create the Issue from the
+[Exploration form](../orchi-core/assets/issues/exploration.yml), and the `explore/<slug>`
 branch with `docs/work/<slug>/`, once the user agrees on the destination), Research, Diverge, Design (the
 [design session](../orchi-core/references/exploration.md#design-session) for a product with a user interface), Converge,
 Shape. Brief each `orchi-researcher` and `orchi-designer` with its mode and the inputs its role lists; when one returns

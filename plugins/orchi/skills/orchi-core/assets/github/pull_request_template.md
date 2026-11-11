@@ -16,7 +16,7 @@
 
 ## Documentation impact
 
-<!-- Required: the pages updated, or why no documentation changes. The Orchi documentation check fails when this is empty. -->
+<!-- Required: the pages updated, or why no documentation changes. The documentation check fails when this is empty. -->
 
 ## Handoff
 

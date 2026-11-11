@@ -1,4 +1,4 @@
-name: Orchi documentation
+name: Documentation
 
 on:
   pull_request:
@@ -17,12 +17,9 @@ jobs:
       - name: Check for new broken documentation links
         env:
           BASE_REF: ${{ github.base_ref }}
-        run: python3 .github/orchi/scripts/knowledge.py lint --since "origin/$BASE_REF"
+        run: python3 .github/scripts/knowledge.py lint --since "origin/$BASE_REF"
       - name: Check the Documentation impact section
         if: github.actor != 'dependabot[bot]'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
-        run: python3 .github/orchi/scripts/knowledge.py impact
-      - name: Keep working documents out of the default branch
-        if: github.base_ref == github.event.repository.default_branch
-        run: python3 .github/orchi/scripts/knowledge.py work
+        run: python3 .github/scripts/knowledge.py impact

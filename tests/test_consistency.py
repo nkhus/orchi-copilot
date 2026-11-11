@@ -161,7 +161,7 @@ def test_the_first_run_is_findable_and_acceptance_waits_for_its_harness():
     assert "its Issue says `First run of <product>.`" in planning and "`Builds wait for first run #<m>`" in planning
     assert "resume an open Issue that says `First run of`" in prose("orchi-plan/SKILL.md")
     for path in ("orchi-core/references/readiness.md", "orchi-core/roles/orchi-reviewer.md",
-                 "orchi-core/references/review-delivery.md", "orchi-core/assets/github/ISSUE_TEMPLATE/orchi-task.yml"):
+                 "orchi-core/references/review-delivery.md", "orchi-core/assets/issues/task.yml"):
         assert "until the acceptance harness lands" in prose(path), path
     assert "planning adds an Issue labelled `needs-planning`" in prose("orchi-core/references/standards.md")
     deliver = prose("orchi-deliver/SKILL.md")

@@ -57,12 +57,12 @@ First [agree the breakdown](../orchi-core/references/planning.md#agree-the-break
 before then. Then follow the Orchi [planning](../orchi-core/references/planning.md) and [GitHub](../orchi-core/references/github.md)
 references for titles, tags, labels, branches, and native relationships.
 
-- **Task:** one Issue, following the `orchi-task.yml` template when the
-  repository has it.
-- **Epic:** the Epic (`orchi-epic.yml` when present), then its Tasks in execution
+- **Task:** one Issue, its body built from the
+  [Task form](../orchi-core/assets/issues/task.yml).
+- **Epic:** the Epic ([Epic form](../orchi-core/assets/issues/epic.yml)), then its Tasks in execution
   order as native sub-issues.
-- **Initiative:** create the Initiative Issue (`orchi-initiative.yml` when
-  present), then the Initiative branch with the plan at
+- **Initiative:** create the Initiative Issue
+  ([Initiative form](../orchi-core/assets/issues/initiative.yml)), then the Initiative branch with the plan at
   `docs/work/<tag>-<slug>/README.md`. Create every Epic as a native
   sub-issue with every field of the Epic readiness checklist; a field that
   depends on a predecessor's result may say `Deferred until #<n>: <reason>`.

@@ -91,11 +91,11 @@ def test_context_wording_agrees_across_exploration_planning_and_delivery():
     assert "`docs/work/<tag>-<slug>/README.md`" in plan and "from `explore/<slug>`" in plan
     review = prose(REFERENCES / 'review-delivery.md')
     assert "`knowledge.py work` must pass" in review and "move the rest of the working folder there and delete it" in review
-    docs = (ASSETS / 'github/workflows/orchi-docs.yml').read_text()
+    docs = (ASSETS / 'github/workflows/docs-check.yml').read_text()
     assert 'knowledge.py stale' not in docs and 'knowledge.py behavior' not in docs
     assert "if: github.actor != 'dependabot[bot]'" in docs
-    assert 'if: github.base_ref == github.event.repository.default_branch' in docs
-    standards_workflow = (ASSETS / 'github/workflows/orchi-standards.yml').read_text()
+    assert 'knowledge.py work' not in docs and 'docs/work' not in docs
+    standards_workflow = (ASSETS / 'github/workflows/standards-check.yml').read_text()
     assert 'ratchet' not in standards_workflow and 'knowledge.py stale' not in standards_workflow
     for path in SKILLS.rglob('*'):
         if path.is_file() and path.suffix in {'.md', '.yml', '.py'}:

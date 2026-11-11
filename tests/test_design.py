@@ -19,7 +19,7 @@ def designer():
 
 
 def form(name):
-    return read(ASSETS / "github/ISSUE_TEMPLATE" / name)
+    return read(ASSETS / "issues" / name)
 
 
 def test_planning_sets_design_depth_and_only_the_user_chooses_a_direction():
@@ -37,7 +37,7 @@ def test_planning_sets_design_depth_and_only_the_user_chooses_a_direction():
 
 def test_ui_readiness_items_have_form_fields():
     assert reference("readiness").count("planning.md#user-interface-design") == 2
-    for name in ("orchi-task.yml", "orchi-epic.yml"):
+    for name in ("task.yml", "epic.yml"):
         text = form(name)
         assert "id: ui" in text and "label: UI design" in text
 
@@ -60,7 +60,7 @@ def test_exploration_records_product_truth_and_references():
     assert "| Product | For a product with a user interface" in exploration
     assert "The first design Epic writes `PRODUCT.md` from it and asks only what is missing" in exploration
     assert "How screens should look is not settled here" not in exploration
-    assert "id: product" in form("orchi-exploration.yml")
+    assert "id: product" in form("exploration.yml")
     assert "write it with the user from the Product section of the Exploration" in design
 
 
@@ -119,7 +119,7 @@ def test_exploration_runs_a_design_session_before_converging():
     assert "| Design | For a product with a user interface" in exploration
     assert "Research, Diverge, Design (the [design session](../orchi-core/references/exploration.md#design-session)" in explore
     assert "`orchi-designer` subagents in Wireframe, Variant, and Mockup modes for the design session" in explore
-    assert "id: design" in form("orchi-exploration.yml")
+    assert "id: design" in form("exploration.yml")
 
 
 def test_design_epic_and_planning_reuse_the_design_session():
@@ -160,7 +160,7 @@ def test_prototype_mode_interviews_through_a_living_prototype_and_keeps_every_la
         assert topic in research
     assert "start `orchi-researcher` subagents on the market, the domain, and similar products" in explore
     assert "| Ideas | Every idea the user raised and parked" in exploration
-    assert "id: ideas" in form("orchi-exploration.yml")
+    assert "id: ideas" in form("exploration.yml")
     assert "`Mode: prototype`" in explore and "keep interviewing while they work" in explore
     assert "report `<id> now researcher`" in explore and "take Orchi's `<id> remark:`" in explore
     assert "in prototype mode, a direction in one line instead" in agent

@@ -116,7 +116,7 @@ agent. Add a custom rule when review finds the same judgement twice, as the
 ## `ENGINEERING.md`
 
 The [template](../assets/standards/ENGINEERING.md) holds the sections and the
-defaults above. Two tables have a fixed shape, because `standards.py` reads them:
+TypeScript defaults above; for Python, take the Python column. Two tables have a fixed shape, because `standards.py` reads them:
 
 - **Checks**: `Check`, `Tool`, `Command`, `CI job`, `Config`, `Threshold`,
   `Blocking`. `Config` lists the committed configuration files, comma-separated,

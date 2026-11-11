@@ -1,4 +1,4 @@
-name: Orchi Epic
+name: Epic
 description: An independently verifiable outcome delivered as sequential Tasks on one branch and PR.
 title: "[INITIATIVE][TAG] "
 labels: [Epic]
@@ -95,8 +95,3 @@ body:
     attributes:
       label: Open questions
       description: Unresolved inputs, not presented as decided facts. Mark any question that affects the approach; the Epic is not ready for delivery until it is resolved.
-  - type: textarea
-    id: work
-    attributes:
-      label: Work reference
-      description: Filled by the owner on claim - assistant session or identifier, branch, and PR.

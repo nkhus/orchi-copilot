@@ -70,8 +70,10 @@ The board is a view of the pool for one repository with two tabs.
   came back from review.
 
 `board.py` builds the snapshot. It reads GitHub with `gh` (one GraphQL query
-plus `status.py`): the Initiative, Epic, and Task tree, unlabelled Issues and
-PRs with no Issue, PR checks and size, the claims, and the question and answer
+plus `status.py`): the Initiative, Epic, and Task tree, untyped Issues and
+PRs with no Issue, PR checks and size, each Issue's
+[GitHub signals](workflow.md#github-signals) (assignees, linked branches and
+PRs, sub-issues, a plan in the body, `blocked by`), and the question and answer
 comments. It combines them with what Orchi last reported through
 `update_pool`: the crews as the app's session status shows them, the mode, the
 pool size, the questions' `request_id`s and the fields no comment holds, the
@@ -84,8 +86,8 @@ Each Task card takes one column from the real state, in this order:
 3. A blocking question: Questions for you, or Your review for a plan, a design
    round, or a merge.
 4. A ready PR: Your review.
-5. A PR, a claim, or a crew on it: In progress.
-6. A Task, or a PR, not labelled `needs-planning`: Backlog.
+5. A PR, an assignee, a linked branch, or a crew on it: In progress.
+6. A Task with sub-issues or a plan in its body, or a PR: Backlog.
 7. Otherwise: Needs planning.
 
 Orchi may name a column (`stages`) only where GitHub does not show the work
