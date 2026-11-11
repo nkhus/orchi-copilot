@@ -5,8 +5,9 @@ import yaml
 
 from conftest import PLUGIN, REFERENCES, SKILLS, read
 
-POOL_ANCHORS = {'sessions', 'roles', 'prepare-the-repository', 'assign-a-crew', 'messages', 'autonomous-mode',
-                'workers', 'release', 'stalls', 'follow-ups', 'initiatives', 'lessons'}
+POOL_ANCHORS = {'sessions', 'roles', 'prepare-the-repository', 'assign-a-crew', 'a-stream-of-requests', 'messages',
+                'questions-and-plans', 'autonomous-mode', 'merge', 'workers', 'release', 'stalls', 'limits', 'status',
+                'update-orchi', 'remote-control', 'follow-ups', 'initiatives', 'lessons'}
 
 
 def prose(path):
@@ -43,6 +44,47 @@ def test_orchi_merges_on_the_users_yes_and_never_deploys():
     assert 'Orchi merges into main on the user\'s yes' in pool
     assert 'on their yes, confirm its checks pass and merge it yourself' in entry
     assert 'merge into main without the user\'s word while it is off; deploy;' in entry
+
+
+def test_every_session_starts_in_an_explicit_mode_never_plan():
+    pool = prose(REFERENCES / 'pool.md')
+    assert 'whose `mode` is always given, since the app otherwise starts it in plan mode' in pool
+    assert '`interactive` while autonomous mode is off, `autopilot` while it is on' in pool
+    assert 'a `kickoff` in `autopilot` mode, since a worker never asks the user' in pool
+    assert 'Crews never run in plan mode.' in pool
+
+
+def test_reports_carry_a_purpose_and_the_assignment_id():
+    pool, work = prose(REFERENCES / 'pool.md'), prose(SKILLS / 'orchi-work/SKILL.md')
+    assert 'Every report up passes a `purpose`' in pool and 'passes the `assignment_id`' in pool
+    for purpose in ('progress', 'needs_input', 'handoff', 'error'):
+        assert f'| `{purpose}` |' in pool, purpose
+    for purpose in ('handoff', 'needs_input', 'error'):
+        assert f'`{purpose}`' in work, purpose
+
+
+def test_agent_merge_lands_a_merge_only_on_the_users_word():
+    pool, entry = prose(REFERENCES / 'pool.md'), prose(SKILLS / 'orchi/SKILL.md')
+    assert '`manage_agent_merge`' in pool and 'only with its `merge_pr` action' in pool
+    assert 'without `merge_pr`, which needs the user\'s word per PR' in pool
+    assert 'turn on Agent Merge\'s `merge_pr` without the user\'s yes to that PR' in entry
+    assert 'the crew never merges' in pool
+
+
+def test_autonomous_mode_keeps_a_reconcile_automation():
+    pool = prose(REFERENCES / 'pool.md')
+    assert '`save_session_automation`' in pool and '`clear: true`' in pool and '`get_session_automation`' in pool
+    assert 'an automation with that prompt means the mode is on' in pool
+    assert '`get_session_automation`' in prose(SKILLS / 'orchi/SKILL.md')
+
+
+def test_workers_are_per_task_sessions_that_never_clear():
+    pool, work = prose(REFERENCES / 'pool.md'), prose(SKILLS / 'orchi-work/SKILL.md')
+    assert 'By default the writer is a subagent' in pool and '`[worker] <topic> <task>`' in pool
+    assert 'Git lets only one worktree check out a branch' in pool
+    for text in (pool, work):
+        assert '/clear' not in text and 'clears itself' not in text
+    assert 'Your crew then archives this session' in work and 'never use `ask_user`' in work
 
 
 def test_setup_runs_from_the_bundled_script_and_checks_first():
