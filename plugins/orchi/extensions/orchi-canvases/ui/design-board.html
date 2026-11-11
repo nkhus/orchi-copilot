@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design board</title>
+<style>
+:root {
+    --status-bar-color: var(--background-color-default, #ffffff);
+    --fg: var(--text-color-default, #1f2328);
+    --muted: var(--text-color-muted, #59636e);
+    --line: var(--border-color-default, #d1d9e0);
+    --bg: var(--background-color-default, #ffffff);
+    --accent: var(--true-color-blue, #0969da);
+    --accent-soft: var(--true-color-blue-muted, #ddf4ff);
+    --star: var(--true-color-orange, #bc4c00);
+    --stage: var(--true-color-gray-muted, rgba(127, 127, 127, .12));
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: var(--text-body-medium, 14px); line-height: var(--leading-body-medium, 20px);
+}
+.app { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-content: start; gap: 16px; padding: 12px 16px; min-height: 100%; }
+header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+h1 { font-size: var(--text-title-small, 16px); font-weight: var(--font-weight-semibold, 600); margin: 0; }
+.sub { color: var(--muted); margin: 2px 0 0; max-width: 72ch; font-size: var(--text-body-small, 12px); }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+button { font: inherit; color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 6px;
+    padding: 3px 10px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button:focus-visible, textarea:focus-visible { outline: 2px solid var(--color-focus-outline, var(--accent)); outline-offset: 1px; }
+button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--color-white, #fff); }
+button:disabled { opacity: .5; cursor: default; }
+nav { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.round h2 { font-size: var(--text-body-small, 12px); font-weight: var(--font-weight-semibold, 600); margin: 0 0 2px;
+    text-transform: none; }
+.round .done { color: var(--muted); font-weight: normal; }
+.item { display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left;
+    border-color: transparent; padding: 4px 8px; }
+.item[aria-current="true"] { background: var(--accent-soft); }
+.item .r { color: var(--star); white-space: nowrap; font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: var(--text-body-small, 12px); }
+main { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.bar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.bar h3 { margin: 0; font-size: var(--text-body-large, 16px); font-weight: var(--font-weight-semibold, 600); }
+.meta, .hint { color: var(--muted); font-size: var(--text-body-small, 12px); margin: 0; }
+.stage { background: var(--stage); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; position: relative; }
+.stage iframe, .stage img { border: 0; transform-origin: 0 0; display: block; background: #fff; }
+.stage img { max-width: 100%; transform: none; margin: 0 auto; }
+.verdict { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start;
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.stars { display: flex; flex-wrap: wrap; gap: 4px; }
+.stars button { min-width: 34px; height: 34px; padding: 0 8px; font-weight: var(--font-weight-semibold, 600); }
+.stars button[data-score][aria-pressed="true"] { background: var(--star); border-color: var(--star); }
+textarea { width: 100%; min-height: 56px; resize: vertical; font: inherit; color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.notes { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; max-width: 80ch; white-space: pre-wrap; }
+.empty { border: 1px dashed var(--line); border-radius: 8px; padding: 24px; color: var(--muted); }
+.roundbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.full { position: fixed; inset: 0; z-index: 20; background: var(--bg); display: flex; flex-direction: column; }
+.full .fbar { display: flex; gap: 8px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+.full iframe, .full img { flex: 1; border: 0; width: 100%; background: #fff; object-fit: contain; min-height: 0; }
+@media (max-width: 720px) {
+    .app { grid-template-columns: minmax(0, 1fr); }
+    .verdict { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+    <header>
+        <div>
+            <h1 id="product">Design board</h1>
+            <p class="sub">Your session adds variants here round by round. Rate each one 1 to 5, note what works and
+                what does not, pick the ones to go on with, then say you are done.</p>
+        </div>
+        <div class="tools">
+            <span role="group" aria-label="Width">
+                <button id="w1440" aria-pressed="true">1440 px</button>
+                <button id="w720" aria-pressed="false">720 px</button>
+            </span>
+            <button id="fullBtn">Full screen</button>
+        </div>
+    </header>
+    <nav id="nav" aria-label="Variants"></nav>
+    <main>
+        <div class="empty" id="empty">No variants yet. Your session adds each round here and tells you when it is ready.</div>
+        <div id="view" hidden>
+            <div class="bar"><h3 id="title"></h3><span class="meta" id="meta"></span></div>
+            <p class="hint" id="question"></p>
+            <div class="stage" id="stage"></div>
+            <div class="verdict">
+                <div class="stars" id="stars" role="group" aria-label="Score and pick"></div>
+                <textarea id="note" placeholder="What works, what does not"></textarea>
+            </div>
+            <div class="notes" id="notes" hidden></div>
+            <div class="roundbar">
+                <button id="done">I am done with this round</button>
+                <span class="hint" id="status">← → move between variants · 1 to 5 score · P picks</span>
+            </div>
+        </div>
+    </main>
+</div>
+<div class="full" id="full" hidden>
+    <div class="fbar"><strong id="ftitle"></strong><span class="hint">at this panel's real width</span>
+        <button id="closeFull" style="margin-left:auto">Close</button></div>
+    <div id="fstage" style="flex:1;display:flex;min-height:0"></div>
+</div>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const IMAGE = /\.(png|jpe?g|gif|webp|avif|svg)$/i;
+const HEIGHT = { 1440: 900, 720: 960 };
+let rounds = [], ratings = {}, items = [], current = null, width = 1440, noteTimer = null;
+try { width = Number(sessionStorage.getItem("width")) || 1440; current = sessionStorage.getItem("current"); } catch {}
+
+function h(tag, props, ...children) {
+    const node = document.createElement(tag);
+    for (const [key, value] of Object.entries(props || {})) {
+        if (value === undefined || value === null || value === false) continue;
+        if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+        else if (key === "class") node.className = value;
+        else node.setAttribute(key, value === true ? "" : value);
+    }
+    for (const child of children.flat()) if (child !== null && child !== undefined && child !== false)
+        node.append(child instanceof Node ? child : String(child));
+    return node;
+}
+
+const key = (item) => `${item.round.id}/${item.id}`;
+const rating = (item) => ratings[item.round.id]?.items?.[item.id] || { score: null, note: "", pick: false };
+const source = (item) => item.file.split("/").map(encodeURIComponent).join("/");
+
+// Variants run sandboxed without same-origin access, so they cannot reach the board's own endpoints.
+function viewer(item, fit) {
+    if (IMAGE.test(item.file)) return h("img", { src: source(item), alt: item.label });
+    return h("iframe", { src: source(item), title: item.label, sandbox: "allow-scripts allow-forms allow-popups",
+        style: fit ? `width:${width}px;height:${HEIGHT[width]}px` : "" });
+}
+
+function scale() {
+    const frame = $("stage").querySelector("iframe");
+    if (!frame) return $("stage").style.height = "";
+    const factor = Math.min(1, $("stage").clientWidth / width);
+    const offset = Math.max(0, ($("stage").clientWidth - width * factor) / 2);
+    frame.style.transform = `translateX(${offset}px) scale(${factor})`;
+    $("stage").style.height = `${Math.round(HEIGHT[width] * factor)}px`;
+}
+
+function select(id) {
+    current = id;
+    try { sessionStorage.setItem("current", id); } catch {}
+    render(true);
+}
+
+function renderNav() {
+    $("nav").replaceChildren(...rounds.map((round) => h("div", { class: "round" },
+        h("h2", null, round.title, ratings[round.id]?.done ? h("span", { class: "done" }, " · done") : null),
+        round.items.map((raw) => {
+            const item = items.find((other) => other.round.id === round.id && other.id === raw.id);
+            const value = rating(item);
+            return h("button", { class: "item", "aria-current": String(key(item) === current), onclick: () => select(key(item)) },
+                h("span", null, item.label), h("span", { class: "r" }, value.pick ? "✓ " : "", value.score ? "★".repeat(value.score) : ""));
+        }))));
+}
+
+function renderStars(item) {
+    const value = rating(item);
+    $("stars").replaceChildren(
+        ...[1, 2, 3, 4, 5].map((score) => h("button", { "data-score": score, "aria-pressed": String(value.score === score),
+            "aria-label": `Score ${score}`, onclick: () => send(item, { score: value.score === score ? null : score }) }, score)),
+        h("button", { "aria-pressed": String(!!value.pick), onclick: () => send(item, { pick: !value.pick }) },
+            value.pick ? "Picked" : "Pick"));
+}
+
+function render(reload) {
+    items = rounds.flatMap((round) => round.items.map((item) => ({ ...item, round })));
+    if (!items.some((item) => key(item) === current)) current = items.length ? key(items[items.length - 1]) : null;
+    renderNav();
+    const item = items.find((other) => key(other) === current);
+    $("empty").hidden = !!item;
+    $("view").hidden = !item;
+    for (const size of [1440, 720]) $("w" + size).setAttribute("aria-pressed", String(width === size));
+    if (!item) return;
+    $("title").textContent = item.label;
+    $("meta").textContent = `${item.round.title} · ${item.file}`;
+    $("question").textContent = item.round.question || "";
+    if (reload || $("stage").dataset.key !== current || $("stage").dataset.width !== String(width)) {
+        $("stage").replaceChildren(viewer(item, true));
+        $("stage").dataset.key = current;
+        $("stage").dataset.width = String(width);
+    }
+    scale();
+    renderStars(item);
+    if (document.activeElement !== $("note")) $("note").value = rating(item).note || "";
+    $("notes").hidden = !item.notes;
+    $("notes").textContent = item.notes || "";
+    $("done").disabled = !!ratings[item.round.id]?.done;
+    $("done").textContent = ratings[item.round.id]?.done ? "Round done" : "I am done with this round";
+}
+
+async function post(path, body) {
+    const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const reply = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(reply.error || response.statusText);
+    return reply;
+}
+
+async function send(item, change) {
+    try {
+        const entry = await post("rate", { round: item.round.id, item: item.id, ...change });
+        ratings[item.round.id] = entry;
+        $("status").textContent = "Saved.";
+        render(false);
+    } catch (error) {
+        $("status").textContent = "Not saved: " + error.message;
+    }
+}
+
+$("note").addEventListener("input", () => {
+    const item = items.find((other) => key(other) === current);
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(() => item && send(item, { note: $("note").value }), 600);
+});
+$("done").onclick = async () => {
+    const item = items.find((other) => key(other) === current);
+    if (!item) return;
+    $("done").disabled = true;
+    try {
+        await post("done", { round: item.round.id });
+        $("status").textContent = "Your session has been told; it reads your ratings now.";
+    } catch (error) {
+        $("status").textContent = "Not sent: " + error.message;
+        $("done").disabled = false;
+    }
+};
+for (const size of [1440, 720]) $("w" + size).onclick = () => {
+    width = size;
+    try { sessionStorage.setItem("width", String(size)); } catch {}
+    render(true);
+};
+$("fullBtn").onclick = () => {
+    const item = items.find((other) => key(other) === current);
+    if (!item) return;
+    $("ftitle").textContent = item.label;
+    $("fstage").replaceChildren(viewer(item, false));
+    $("full").hidden = false;
+    $("closeFull").focus();
+};
+$("closeFull").onclick = () => { $("full").hidden = true; $("fstage").replaceChildren(); };
+document.addEventListener("keydown", (event) => {
+    if (event.target.closest?.("textarea")) return;
+    if (event.key === "Escape" && !$("full").hidden) return $("closeFull").click();
+    const index = items.findIndex((item) => key(item) === current);
+    if (index < 0) return;
+    const item = items[index];
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+        const next = items[(index + (event.key === "ArrowRight" ? 1 : items.length - 1)) % items.length];
+        select(key(next));
+        event.preventDefault();
+    } else if (/^[1-5]$/.test(event.key)) send(item, { score: Number(event.key) });
+    else if (event.key === "p" || event.key === "P") send(item, { pick: !rating(item).pick });
+});
+new ResizeObserver(scale).observe($("stage"));
+
+async function load(reload) {
+    try {
+        const data = await (await fetch("data")).json();
+        rounds = data.rounds || [];
+        ratings = data.ratings || {};
+        $("product").textContent = data.product ? `${data.product} design board` : "Design board";
+        render(reload);
+    } catch (error) {
+        $("status").textContent = "The board lost its extension: " + error.message;
+    }
+}
+new EventSource("events").onmessage = (event) => {
+    const change = JSON.parse(event.data || "{}");
+    if (change.type === "rounds" && change.round) {
+        const round = change.round;
+        load(true).then(() => {
+            const first = items.find((item) => item.round.id === round);
+            if (first) select(key(first));
+        });
+    } else load(false);
+};
+load(true);
+</script>
+</body>
+</html>

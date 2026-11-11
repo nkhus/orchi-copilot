@@ -31,8 +31,6 @@ Claude Code edition and is not changed from here.
 | Upstream part | Why |
 | --- | --- |
 | The npm installer (`bin/`, `package.json`, `tools/install.py`, `orchi_install.py`, `orchi_core/`, `tools/smoke_install.py`) | The plugin marketplace installs the plugin, and `setup.py` prepares a repository |
-| `orchi-dashboard` and `dashboard.py` | The board of the pool comes with the canvases Epic ([nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4)) |
-| `design-board.html` | Variants are opened from `.orchi-tmp/board/` for now; the visual design board comes with the canvases Epic |
 | The role sources (`skills/orchi-core/roles/`) rendered into agents | The plugin ships the custom agents directly |
 | Vendoring Hallmark and prototype | The user installs design skills ([design](design.md#design-skills)) |
 | Claude Desktop session mechanics: sidebar groups, start cards, title renames, `/clear`, a standing worker pool built ahead, the takeover protocol, `Background:` process lines, the bypass-mode check, Orchi's notes file, and per-session remote control | The app's sessions have none of them; [pool](pool.md#decisions) records what replaces each |
@@ -52,6 +50,9 @@ Claude Code edition and is not changed from here.
 | Bash, Read, Edit, Write, Grep, Glob | shell, view, edit, create, grep, glob |
 | WebFetch, WebSearch | `web_fetch`, `web_search` |
 | TodoWrite | The session's todos table |
+| The dashboard in a browser tab, and its local server | The `orchi-board` canvas ([canvases](canvases.md)) |
+| `design-board.html` served from `.orchi-tmp/board/` | The `orchi-design-board` canvas, with ratings read by `read_picks` |
+| A prototype opened in a browser | The app's Browser canvas |
 | Plan mode | Copilot plan mode |
 | Bypass permissions mode | Approve all, or Autopilot mode |
 | A Claude Desktop session and its sidebar group | A Copilot Project and its child sessions |
@@ -73,6 +74,8 @@ Claude Code edition and is not changed from here.
 | `skills/orchi-core/roles/orchi-<role>.md` | `plugins/orchi/agents/orchi-<role>.agent.md` |
 | `skills/orchi-core/roles/README.md` | `plugins/orchi/skills/orchi-core/references/roles.md` |
 | `skills/orchi-core/scripts/{status,knowledge,standards}.py` | `plugins/orchi/skills/orchi-core/scripts/` |
+| `skills/orchi-dashboard/`, `skills/orchi-core/scripts/dashboard.py` | `plugins/orchi/extensions/orchi-canvases/lib/board.mjs`, `ui/board.html`, `plugins/orchi/skills/orchi-core/scripts/board.py` |
+| `skills/orchi-core/assets/design-board.html` | `plugins/orchi/extensions/orchi-canvases/lib/design-board.mjs`, `ui/design-board.html` |
 | `skills/orchi-core/assets/{docs,github,standards}/` | `plugins/orchi/skills/orchi-core/assets/` |
 | The installer and its `--github` setup | `plugins/orchi/skills/orchi-core/scripts/setup.py`, `.github/plugin/marketplace.json`, `plugins/orchi/plugin.json` |
 | `tools/validate_package.py` | `tools/validate_package.py` |

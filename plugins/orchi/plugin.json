@@ -11,5 +11,6 @@
   "keywords": ["workflow", "github-issues", "planning", "delivery", "review"],
   "category": "development",
   "agents": "agents/",
-  "skills": "skills/"
+  "skills": "skills/",
+  "extensions": "extensions/"
 }

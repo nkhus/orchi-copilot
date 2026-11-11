@@ -107,3 +107,29 @@ def test_claude_outside_a_model_id_breaks_validation(tmp_path):
         stream.write('\nWrite it to CLAUDE.md.\n')
     report = validator.validate(copy)
     assert any('names Claude outside a model ID' in error for error in report['errors']), report['errors']
+
+
+EXTENSION = 'plugins/orchi/extensions/orchi-canvases/'
+
+
+@pytest.mark.parametrize('path, edit, message', [
+    ('lib/server.mjs', lambda t: t.replace('listen(0, "127.0.0.1"', 'listen(0, "0.0.0.0"'), 'listen on 127.0.0.1 port 0'),
+    ('lib/board.mjs', lambda t: t + '\nconsole.log("debug");\n', 'console output corrupts'),
+    ('lib/board.mjs', lambda t: t.replace('name: "refresh"', 'name: "canvas.refresh"'), 'are reserved'),
+    ('lib/store.mjs', lambda t: 'import express from "express";\n' + t, 'import only node:'),
+])
+def test_extension_rules_break_validation(tmp_path, path, edit, message):
+    copy = source_copy(tmp_path)
+    script = copy / EXTENSION / path
+    script.write_text(edit(script.read_text(encoding='utf-8')), encoding='utf-8')
+    report = validator.validate(copy)
+    assert any(message in error for error in report['errors']), report['errors']
+
+
+def test_extension_without_entry_or_with_a_package_breaks_validation(tmp_path):
+    copy = source_copy(tmp_path)
+    (copy / EXTENSION / 'extension.mjs').rename(copy / EXTENSION / 'main.mjs')
+    (copy / EXTENSION / 'package.json').write_text('{}', encoding='utf-8')
+    errors = validator.validate(copy)['errors']
+    assert any('needs extension.mjs' in error for error in errors), errors
+    assert any('ship no package.json' in error for error in errors), errors

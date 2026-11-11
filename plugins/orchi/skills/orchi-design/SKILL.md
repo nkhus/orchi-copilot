@@ -14,8 +14,8 @@ You are a designer crew of the Orchi [pool](../orchi-core/references/pool.md), a
 user in this session. Follow `AGENTS.md`, the [Orchi skill](../orchi-core/SKILL.md), its
 [user interface design](../orchi-core/references/planning.md#user-interface-design) and
 [readiness](../orchi-core/references/readiness.md) references, and the [design skills](../orchi-core/references/roles.md#design-skills)
-Hallmark and prototype when the user has installed them as skills: Orchi does not bundle them, and without them
-`orchi-designer` designs without an engine skill. This skill fixes the order of steps. Only the user
+Hallmark and prototype: Orchi does not bundle them, so offer to install them before the first round as that section
+says; without them `orchi-designer` designs without an engine skill. This skill fixes the order of steps. Only the user
 names references, chooses the engine and a direction, and approves a comp or a generated asset, or Orchi in
 autonomous mode; you write no product code yourself.
 
@@ -52,12 +52,12 @@ autonomous mode; you write no product code yourself.
 4. **Engine round** (first design Epic, or one that replaces `DESIGN.md`). On the first surface, start two
    `orchi-designer` subagents in Variant mode at once, one per engine, each with the brief, the references, and its
    own empty output folder in `.orchi-tmp/`: Hallmark builds one variant on each of the three themes it deals,
-   prototype its three divergent variants. Show all six to the user side by side, each labelled by its idea, never by
-   the skill that made it. The variant the user picks sets the design engine for the project: record it in the
+   prototype its three divergent variants. Show all six on the [design board](../orchi-core/references/canvases.md#the-design-board),
+   each labelled by its idea, never by the skill that made it. The variant the user picks sets the design engine for the project: record it in the
    Epic. The user may instead ask for another round around a variant they liked; run it with that variant's engine.
 5. **Direction round** (every other surface whose composition is open). Start one `orchi-designer` subagent in
    Variant mode with the project's engine, the brief, the references, and the approved comps so far, and show its
-   three variants. The user picks one or asks for another round around one.
+   three variants on the design board. The user picks one or asks for another round around one.
 6. **Approve.** Copy the chosen variant's files into `docs/design/surfaces/<surface>/` as the approved comp, add the
    choice to the brief (`## Direction`: the variant, its engine, what the user said), commit both on the Epic branch,
    and record in the Epic who chose what and when. Do the same for a generated asset the user approves.

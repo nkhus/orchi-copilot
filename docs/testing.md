@@ -24,6 +24,10 @@ python -m pytest -q
 - the six custom agents: documented frontmatter keys and tool aliases, the
   pinned model of each, no `edit` tool for the read-only roles (`orchi-scout`,
   `orchi-researcher`, `orchi-reviewer`), and a body within the size limit;
+- the extensions under `plugins/orchi/extensions/`: each has `extension.mjs`
+  and no `package.json` or `node_modules`, imports only `node:` modules, the
+  Copilot SDK, and its own files, writes nothing to the console, listens only on
+  `127.0.0.1` port 0, and names no action `canvas.*`;
 - the ownership map in [`docs/README.md`](README.md#ownership): every file under
   `plugins/` matches a row, every row matches a file, and every page it names
   exists;
@@ -47,6 +51,8 @@ The test suite, in `tests/`:
 | `test_consistency.py` | Skills, agents, and references agree where a session follows one and not the other |
 | `test_delivery.py` | Writer continuation, verification verdicts, and delivery course corrections |
 | `test_design.py` | The design track's wording across planning, readiness, the forms, the skills, and the designer agent |
+| `test_board.py` | `board.py`: the crews' states, claims, deferred and held items, and what waits for the user |
+| `test_canvases.py` | The canvases extension under Node: request sentences, round checks, path containment, and the loopback server's token, `Host`, and JSON checks; skipped without Node |
 | `test_context.py`, `test_knowledge.py` | `knowledge.py` snapshot isolation, reads, lint, `impact`, and `work`, and the vendored copy run from a repository root |
 | `test_standards.py` | `standards.py check` and `ruleset` |
 | `test_status.py`, `test_status_initiative.py` | `status.py` readiness, pagination, and blockers merged into Initiative branches |
@@ -99,7 +105,19 @@ Check that:
   deploy, or a destructive action to the user, and merges a reviewed PR with
   passing checks;
 - a `design` Epic goes to a designer crew whose rounds put variants under
-  `.orchi-tmp/board/v/<round>/`, each labelled by its idea;
+  `.orchi-tmp/board/v/<round>/`, each labelled by its idea, and publish them
+  on the design board, whose Round done brings the ratings back through
+  `read_picks`;
+- the installed plugin's extension loads (`orchi-board` and
+  `orchi-design-board` appear in the app's canvas list), Orchi opens the board
+  at start and reports after each reconcile, and a confirmed board button
+  reaches Orchi, which checks the state before acting;
+- the board looks right inside the app's canvas panel with the app's theme,
+  light and dark;
+- before the first design round, a session offers to install the missing
+  design skills, and `orchi-designer` subagents started afterwards see them;
+- a living prototype opens in the Browser canvas and reloads after each
+  change;
 - the slash-command menu offers only `/orchi`, and a role skill invoked without
   `--report-to` points to `/orchi` and stops;
 - after compaction, Orchi and a crew still know their role and next step, or

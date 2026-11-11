@@ -134,11 +134,11 @@ output folders enters the repository.
 
 ### The design board
 
-The user sees, rates, and picks variants on the design board: each round's
-files, gathered under `.orchi-tmp/board/v/<round>/` and opened in the browser.
-Say what to look at, then ask in the conversation for each item's
-score (1 to 5), a note, and the pick. Record what they picked and why in the
-Design section.
+The user sees, rates, and picks variants on the design board canvas, as the
+[canvases reference](canvases.md#the-design-board) says: gather each round's
+files under `.orchi-tmp/board/v/<round>/`, publish the round, say what to look
+at, and read the scores, notes, and picks when the user is done. Record what
+they picked and why in the Design section.
 
 ## Prototype mode
 
@@ -191,7 +191,8 @@ products found, and take the variants' directions and sample data from it.
    record the pick and why.
 3. **Living prototype.** Commit the picked mockup to the working folder's
    `prototype/`, record its path in the Design section, and open it in the
-   browser for the user to keep beside the conversation. From here, each
+   Browser canvas for the user to keep beside the conversation, as the
+   [canvases reference](canvases.md#pages-in-the-browser-canvas) says. From here, each
    remark is a change: one the user types, or an answer of the interview. Give changes to an `orchi-designer` subagent in
    Mockup mode, with the current prototype and the remarks, and keep asking
    while it works: states (empty, loading, error, many items), edge cases,
@@ -199,11 +200,11 @@ products found, and take the variants' directions and sample data from it.
    arrive meanwhile wait and go to the next subagent in one batch. When the
    user asks for options for a screen, ask how many and run a round on the
    board as step 2 does, for that screen.
-4. **Before showing a change,** open the prototype in the browser, go through
-   the flows it changed at the widths the briefs name, and give any breakage
+4. **Before showing a change,** go through the flows it changed in the
+   Browser canvas and at the widths the briefs name, and give any breakage
    back to the subagent. After two failed repairs of the same thing, change the
    approach or ask the user instead of repairing it a third time. Commit and
-   reopen each change the user sees: every commit is a version, and to go back
+   reload the canvas for each change the user sees: every commit is a version, and to go back
    you commit an earlier version's files as a new one.
 5. **Build it.** When the user says to build it, make sure the Issue holds
    every finding of the conversation and the prototype: each decision, a

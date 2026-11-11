@@ -15,6 +15,7 @@ variants and the UI Tasks.
 | Design depth (none, brief, Epic) in planning | `plugins/orchi/skills/orchi-core/references/planning.md` |
 | Who runs which design step, and the design skills | `plugins/orchi/skills/orchi-core/references/roles.md` |
 | The designer's Wireframe, Variant, Mockup, Task, and Audit modes | `plugins/orchi/agents/orchi-designer.agent.md` |
+| The design board canvas and pages in the Browser canvas | `plugins/orchi/skills/orchi-core/references/canvases.md`, `plugins/orchi/extensions/orchi-canvases/` ([canvases](canvases.md)) |
 
 ## The design Epic
 
@@ -47,20 +48,33 @@ mode on.
 
 The design engines are [Hallmark](https://github.com/Nutlope/hallmark) and Emil
 Kowalski's [prototype](https://github.com/emilkowalski/skills). The plugin does
-not bundle or vendor them: the user installs them as skills. Without them,
-`orchi-designer` designs without an engine skill. prototype is marked for the
-user's invocation only, so the designer reads its `SKILL.md` and follows it
-rather than starting it with the `skill` tool.
-[SmoothUI](https://smoothui.dev/) is a component source for React projects with
-Tailwind CSS 4 and shadcn/ui, not a design skill.
+not bundle or vendor them. Before the first design round, the session that
+talks to the user checks them with `gh skill list` and, for each one missing,
+asks the user whether to install it; on a yes it runs `gh skill install` for
+the GitHub Copilot agent at user scope, pinned to the commit Orchi was tested
+with. The pins live once, in the roles reference's Design skills section.
+Skills load when a session starts, so a skill installed mid-session may reach
+only later sessions. Without them, `orchi-designer` designs without an engine
+skill and says so. prototype is marked for the user's invocation only, so the
+designer reads its `SKILL.md` and follows it rather than starting it with the
+`skill` tool. [SmoothUI](https://smoothui.dev/) is a component source for React
+projects with Tailwind CSS 4 and shadcn/ui, not a design skill.
 
 ## The design board
 
-The user sees, rates, and picks variants as files: each round's variants are
-gathered under `.orchi-tmp/board/v/<round>/` and opened in the browser, and the
-session asks for each one's score, a note, and the pick in the conversation. A
-visual design board in the app is not built yet; it comes with the canvases
-Epic ([nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4)).
+The user sees, rates, and picks variants on the design board, a canvas beside
+the conversation ([canvases](canvases.md#the-design-board)). The session gathers
+each round's files under `.orchi-tmp/board/v/<round>/`, publishes the round with
+its question and a label per variant, and reads the scores (1 to 5), notes, and
+picks once the user presses Round done, which sends a message into the
+conversation. The board shows each variant in a sandboxed frame at 1440 or 720
+px, scaled to fit, or full screen. Ratings stay in `.orchi-tmp/board/`; the
+session records what the user picked and why in the Design section or the Epic.
+
+In prototype mode, the living prototype opens in the app's Browser canvas, and
+the session checks each change there before showing it. Without the canvases,
+each file opens in the Browser canvas and the session asks for scores, notes,
+and the pick in the conversation.
 
 ## Decisions
 
@@ -69,7 +83,9 @@ delete it when it no longer holds.
 
 | Decision | Reason | Rejected | Since |
 | --- | --- | --- | --- |
-| Hallmark and prototype are not bundled or vendored; the user installs them, and without them the designer works without an engine skill | Bundling third-party skills into the plugin makes Orchi responsible for their versions and licenses; a plugin cannot install other skills for the user | Vendoring both skills at pinned commits, as the Claude Code installer does | [nkhus/orchi-copilot#2](https://github.com/nkhus/orchi-copilot/issues/2) |
+| Hallmark and prototype are not bundled; before the first design round the session asks the user and, on a yes, installs each missing one with `gh skill install` at a pinned commit, user scope; without them the designer works without an engine skill | A plugin cannot ship other repositories' skills without vendoring them, which makes Orchi carry their updates and licenses; `gh skill` installs them from their own repositories with source tracking, and pins keep the version Orchi was tested with | Vendoring both skills into the plugin or through `setup.py`; leaving installation wholly to the user, so a first engine round runs without engines unless the user prepared them | [nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4) |
+| The design board is a canvas of the plugin, reading round files and ratings from `.orchi-tmp/board/`; the user rates there and the session reads the ratings with `read_picks` | The user compares variants side by side and rates them without typing scores, and the files stay out of commits | Opening each file in the browser and collecting scores in the conversation, now the fallback | [nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4) |
+| A living prototype opens in the Browser canvas, and the session checks its flows there before showing a change | The user keeps it beside the conversation, and the session reads and drives the same page | A separate browser window | [nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4) |
 | Variants are labelled by their idea, never by the design skill that made it | The user picks a look, not a tool, and said skill names do not matter to them | Showing which engine built each variant | [nkhus/orchi#59](https://github.com/nkhus/orchi/pull/59) |
 | Every design session and design Epic asks the user for references and proposes three to five that fit the product; the agreed set, with screenshots, is recorded in `docs/design/references/` and given to every variant and build | References raised the variants' scores more than any design skill did | Designing from the brief alone | [nkhus/orchi#59](https://github.com/nkhus/orchi/pull/59) |
 | `PRODUCT.md` and `DESIGN.md` are written with the user by the session that talks to them, never by a subagent; a generated asset is committed only after the user approves it | Both bind all later work, so the user must see them | Writing them unattended in the last build Task | [nkhus/orchi#50](https://github.com/nkhus/orchi/pull/50), [nkhus/orchi#59](https://github.com/nkhus/orchi/pull/59) |

@@ -52,10 +52,11 @@ You don't commit or push anything. From then on, tell Orchi what you want; it
 starts a crew session for each request and archives it when the work is done.
 
 > **Needs** Git, a GitHub remote, an authenticated GitHub CLI (`gh`), and
-> Python 3. For design work, install the design skills
+> Python 3. Orchi does not bundle the design skills
 > [Hallmark](https://github.com/Nutlope/hallmark) and Emil Kowalski's
-> [prototype](https://github.com/emilkowalski/skills) yourself; Orchi does not
-> bundle them.
+> [prototype](https://github.com/emilkowalski/skills): before the first design
+> round it offers to install them with `gh skill`. The plugin's canvases, the
+> Orchi board and the design board, open beside the conversation.
 
 The [installation guide](docs/installation.md) covers updating and removing the
 plugin, the repository defaults, and everything setup writes.
@@ -243,6 +244,7 @@ precedence over Orchi's defaults.
 | [Workflow](docs/workflow.md) | Follow exploration, planning, delivery, and review |
 | [Pool](docs/pool.md) | See how Orchi and its crews work in a Copilot Project |
 | [Design](docs/design.md) | See how UI work runs |
+| [Canvases](docs/canvases.md) | See the Orchi board and the design board |
 | [Standards](docs/standards.md) | See `ENGINEERING.md`, the default stack and checks, and gate integrity |
 | [Context](docs/context.md) | See how documentation stays current |
 | [Installation](docs/installation.md) | Install, update, or remove Orchi, and see what setup writes |

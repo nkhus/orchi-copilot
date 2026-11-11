@@ -145,16 +145,20 @@ without `$schema`, with its components in the default `agents/` and `skills/`
 directories. Agent Plugins 1.0 defines a closed manifest whose `extensions`
 field is namespaced client data (Copilot's components live under
 `com.github.copilot/`) and documents no location for canvas extensions. The
-legacy manifest's `extensions` field is a path to extension directories, which
-the canvases Epic ([nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4))
-needs.
+legacy manifest's `extensions` field is a path to extension directories:
+`"extensions": "extensions/"` ships `extensions/orchi-canvases/`, which the
+Copilot CLI loads in each session once the plugin is installed
+([canvases](canvases.md#how-they-load)). The CLI plugin reference lists the
+field, and a test plugin's extension loaded through it.
 
 ### What each surface supports
 
 Copilot app plugins can package skills, hooks, custom agents, MCP servers, and
 canvas extensions. Copilot CLI plugins can package custom agents, skills,
-commands, hooks, MCP servers, and LSP servers. Orchi ships skills and custom
-agents.
+commands, hooks, MCP servers, and LSP servers. Orchi ships skills, custom
+agents, and one extension with two canvases. The board's snapshot runs
+`board.py` with Python 3 and reads GitHub with `gh`, signed in through its
+keyring: the extension's environment does not pass `GITHUB_TOKEN`.
 
 ### Distribution
 
@@ -212,5 +216,7 @@ The Copilot app keeps session worktrees outside the repository, so the managed
 
 ### Design skills
 
-The design skills Hallmark and prototype are neither bundled nor vendored; the
-user installs them ([design](design.md#design-skills)).
+The design skills Hallmark and prototype are neither bundled nor vendored. On
+the user's yes, the session that runs the first design round installs them with
+`gh skill install`, pinned, at user scope ([design](design.md#design-skills));
+removing the plugin leaves them installed, and `gh skill list` shows where.

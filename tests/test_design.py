@@ -52,6 +52,7 @@ def test_designer_crew_role_routing_and_mode_agree():
     assert "asks for orchi-design by name" in design
     assert "`ask_user`" in design and "`agent_type: orchi-designer`" in design
     assert "(../orchi-core/references/roles.md#design-skills)" in design and "does not bundle them" in design
+    assert "(../orchi-core/references/canvases.md#the-design-board)" in design
 
 
 def test_exploration_records_product_truth_and_references():
