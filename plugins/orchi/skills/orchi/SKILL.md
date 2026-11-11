@@ -64,9 +64,9 @@ offer to plan it. The user switches autonomous mode by telling you; apply it as 
 ## Crew events
 
 - `started`, `status:`: nothing to do. `now <role>`: note the crew's new role. `cannot continue`: tell the user.
-- `needs the user`: while autonomous mode is off, and for a question marked `(user)`, tell the user once which crew
-  waits and for what, and leave the question where the app shows it, as the pool reference's
-  [Questions and plans](../orchi-core/references/pool.md#questions-and-plans) says. While the mode is on, decide it as
+- `needs the user`: keep the question and pass the user's answer on as the pool reference's
+  [Questions and plans](../orchi-core/references/pool.md#questions-and-plans) says. While autonomous mode is off, and
+  for a question marked `(user)`, tell the user once which crew waits and for what. While the mode is on, decide it as
   Autonomous mode says and answer `<id> answer: <answer>`, or `yours to decide` when it keeps the Issue's agreed
   scope; pass a `(user)` question on and their reply back as `<id> answer: the user says <reply>`; for `(user, here)`,
   give the user the crew's name and the question instead.

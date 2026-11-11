@@ -7,27 +7,49 @@ line and go on in the conversation as if it did not exist.
 
 ## The Orchi board
 
-The board shows the pool for one repository: what waits for the user (crews' questions, Orchi's questions, PRs to
-merge, stuck crews), each crew and what it does, the backlog tree from `status.py`, and open PRs with their checks. It
-reads GitHub through `scripts/board.py` every five minutes and on Refresh, and adds what only Orchi knows from its
-`update_pool` reports. It writes nothing to GitHub.
+The board is a view of the pool for one repository, with two tabs. **Crews** lists Orchi and each crew with its
+status and open questions, and a crew's page shows all its questions to answer at once, with what it answered today;
+the Orchi Summary closes the tab. **Board** is a kanban on three levels (Initiatives, an Initiative's Epics, an Epic's
+Tasks, and Outside Initiatives for Issues and PRs with none) in six columns: Needs planning, Backlog, In progress,
+Questions for you, Your review, and Done. A Task's page shows what the user decides there. The board reads GitHub
+through `scripts/board.py` every five minutes and on Refresh: the backlog, PRs, claims, and the question and answer
+comments of the pool's [Questions and plans](pool.md#questions-and-plans). It adds what only Orchi knows from its
+`update_pool` reports, and writes nothing to GitHub. Orchi moves cards by changing the real state; the user's moves
+and answers on the board are requests to Orchi.
 
 1. **Open it** at the start of Orchi's conversation, and whenever the user asks for it: `open_canvas` with canvasId
    `orchi-board`, instanceId `orchi-board`, and input `{"repo": "<owner>/<name>"}`. Opening the same instanceId again
    focuses it.
 2. **Report** after each reconcile and whenever the Status answer would change for the user: `invoke_canvas_action`
-   `update_pool` on `orchi-board` with every crew from `get_sessions_status` (`name`, `session_id`, `state`, and
-   `issue`, `doing`, `question`, `background`, `since`, `stuck` when known), `mode`, `limit`, Orchi's own open
-   `questions` (a short id and the text), `merges` (PRs waiting for the user's yes), `deferred`, and `held`. A crew's
-   `state` is `waiting` while it needs the user's input, `stuck` as the pool's Stalls section says, `working` while it
-   runs, `idle` when it holds work but runs nothing, and `free` when it holds none. Each list you pass replaces the
-   stored one, so pass whole lists.
+   `update_pool` on `orchi-board`. Each list or object you pass replaces the stored one, so pass whole lists.
+   - `crews`: every crew from `get_sessions_status`, with `name`, `session_id`, `state`, and when known `issue`,
+     `doing` in a few plain words, `question`, `background`, `since`, `stuck`, `runs`, `pr`, and `branch`. A crew's
+     `state` is `waiting` while it needs the user's input, `stuck` as the pool's Stalls section says, `working` while
+     it runs, `idle` when it holds work but runs nothing, and `free` when it holds none.
+   - `questions`: every open question with its `id`. Add `request_id` while the crew waits on `ask_user` or a plan,
+     and the other fields (`crew`, `issue`, `kind`, `blocking`, `assumed`, `text`, `context`, `choices`, `plan`,
+     `links`, `asked`) for a question no comment holds yet, such as a tool approval or a crew's `ask_user`. The
+     board joins them by `id` with the question comments.
+   - `summary`: one line each for `progress`, `waits` (what waits on the user and what it unblocks), `risks`, `next`,
+     and `today` (what merged and was answered), with `at`.
+   - `mode`, `limit`, `merges` (PRs waiting for the user's yes), `deferred`, `held`, and `queue` (`issue`, `action`,
+     `title`: work that starts when a crew is free).
+   - `stages` (number → column) only where GitHub does not show where the work is yet, and `moves` (`number`, `to`,
+     `note`, `back` when it came back from the user's review) for a card's history.
 3. **Take its requests.** A message that ends with `(Sent from the Orchi board ...)` is the user's own request for that
-   one action, confirmed on the board. Check the current state first (the Issue, the PR, the crew's status); when it no
-   longer fits, say why in one line and do nothing. Otherwise do it as you would the same words typed by the user:
+   one action, confirmed on the board after a five-second Undo. Check the current state first (the Issue, the PR, the
+   crew's status, the question's `request_id`); when it no longer fits, say why in one line and do nothing. Otherwise
+   do it as you would the same words typed by the user:
 
 | Request | What Orchi does |
 | --- | --- |
+| `Answer question <id> of <crew>: <answer>` | Passes the answer on as the pool's [Questions and plans](pool.md#questions-and-plans) says, with the `request_id` the message names, and records it |
+| `Approve the plan <crew> asked about in question <id>.` | `respond_to_session_plan_v2` approving it, or `<id> answer: approved` when the plan is a kept question |
+| `Ask <crew> to change the plan of question <id>: <text>` | Rejects the plan with the text as feedback, or sends it as the answer |
+| `Send PR #<n> back with these changes: <text>` | `#<m> rework: <text>` to the crew that holds it |
+| `Open the session of <crew> for me.` | `navigate_to` that crew's session, where the user answers a tool approval |
+| `Open the design board for the round of <crew>.` | Asks the crew to publish or reopen its round on the design board |
+| `Refresh the pool summary on the board.` | Reports `update_pool` with a fresh `summary` |
 | `Answer the question of <crew>: <text>` | Answers that crew's open question with the text: `answer_session_input` with its exact `request_id` when it waits on `ask_user`, otherwise a message to the crew |
 | `About your question <id>: <text>` | Takes the text as the user's answer to its own question `<id>` |
 | `Merge PR #<n>.` | The user's yes to merge it; every other merge check still applies |
@@ -39,7 +61,7 @@ reads GitHub through `scripts/board.py` every five minutes and on Refresh, and a
 | `Turn autonomous mode <on or off>.` | Changes the mode as the pool's Autonomous mode section says |
 
 After a restart, rebuild `deferred` and `held` from those comments: an Issue is deferred while its latest such comment
-says Deferred, and a PR is held until the user says to merge it.
+says Deferred, and a PR is held until the user says to merge it. The open questions come back from their comments.
 
 ## The design board
 

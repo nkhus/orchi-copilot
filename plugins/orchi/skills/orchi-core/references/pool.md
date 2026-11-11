@@ -189,7 +189,7 @@ carried one). A message down passes the existing `assignment_id` for news about 
 | From → to | Message | Purpose |
 | --- | --- | --- |
 | Crew → Orchi | `<id> started`, `#<n> waits for #<m>`, an unasked `<id> status: <what it does and what it waits for>` | `progress` |
-| Crew → Orchi | `<id> needs the user: <question>` | `needs_input` |
+| Crew → Orchi | `<id> needs the user: <question>[, going with <answer>]` | `needs_input` |
 | Crew → Orchi | `<id> now <role>`, `<id> planned: #<n>[, #<m>]`, `<id> declined: <reason>`, `#<n> PR ready: <url>[, see it at <local link>]`, `#<n> follow-up: #<m>`, `#<n> done: <url>`, the `<id> status:` that answers `status?`, `<crew> released`, `<crew> not released: <reason>`, `<crew> updated to <version>` | `handoff` |
 | Crew → Orchi | `<id> refused: claimed`, `<id> cannot continue: <reason>` | `error` |
 | Orchi → crew | `<id> answer: <answer>`, `<id> remark: <the user's words>`, `#<n> rework: <what the user asked>`, `#<m> queued`, `#<n> merged`, `<id> status?`, `autonomous <on or off>`, `release` | none |
@@ -199,6 +199,28 @@ work waits for an Issue it does not hold appends `, waits for #<m>` to its work 
 `#<n> waits for #<m>`; once #<m> has merged, Orchi sends it `#<m> merged`, and the crew goes on.
 
 ## Questions and plans
+
+A crew stops to ask only when its work cannot go on without the answer: a session waiting on `ask_user` holds one
+question and does nothing else. When the work can go on, the crew picks the answer it would take, reports
+`<id> needs the user: <question>, going with <answer>` with the options in a comment the message names, and keeps
+working; it changes course when the answer differs. A crew may have several such questions open.
+
+Orchi keeps every open question for the user, so that a series survives restarts and the board can show it. It writes
+each as a comment on the Issue or PR it is about: the question in plain words for people, ending with
+`<!-- orchi:question {...} -->` holding `id`, `crew`, `kind` (`question`, `plan`, `design`, `permission`, `merge`),
+`blocking`, `assumed` (the going-with answer), `text`, `context` (a few lines the user needs), `choices`
+(`label`, `detail` with its consequence, `recommended`), and `plan` (a plan's Tasks). Once the user has answered, it
+comments `<!-- orchi:answer {"id": "<id>", "answer": "<answer>"} -->` on the same Issue or PR. The open questions are
+the question comments with no answer comment; a crew's `ask_user` and a `pending_plan` are open while
+`get_sessions_status` shows them. Orchi reports them all to the board as [canvases](canvases.md#the-orchi-board) says.
+
+An answer the user gives in Orchi's conversation or on the board goes through Orchi. Orchi first checks that the
+question is still open; when it is not, it says so in one line. Otherwise it answers a crew waiting on `ask_user` with
+`answer_session_input`, the exact `request_id`, and the user's choice exactly as one of the question's choices (their
+own words only when the question allows them); a pending plan with `respond_to_session_plan_v2` and its `request_id`,
+approving it or rejecting it with the user's changes as feedback; and a kept question with
+`<id> answer: the user says <answer>`. A tool approval (`permission`) is answered only in the crew's own session:
+Orchi takes the user there with `navigate_to`.
 
 While autonomous mode is off, a crew asks the user in its own session with `ask_user`. In a Project, the app shows the
 question in Orchi's conversation as well, where the user may answer it; Orchi only tells the user once which crew waits

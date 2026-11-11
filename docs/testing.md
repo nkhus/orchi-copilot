@@ -51,8 +51,8 @@ The test suite, in `tests/`:
 | `test_consistency.py` | Skills, agents, and references agree where a session follows one and not the other |
 | `test_delivery.py` | Writer continuation, verification verdicts, and delivery course corrections |
 | `test_design.py` | The design track's wording across planning, readiness, the forms, the skills, and the designer agent |
-| `test_board.py` | `board.py`: the crews' states, claims, deferred and held items, and what waits for the user |
-| `test_canvases.py` | The canvases extension under Node: request sentences, round checks, path containment, and the loopback server's token, `Host`, and JSON checks; skipped without Node |
+| `test_board.py` | `board.py`: the crews' states, claims, deferred and held items, questions kept in comments with sent and answered ones, each card's column, Epic and Initiative aggregation and progress, history with back-moves, and what waits for the user |
+| `test_canvases.py` | The canvases extension under Node: request sentences (answers with their `request_id`, plans, reviews), round checks, path containment, and the loopback server's token, `Host`, and JSON checks; skipped without Node |
 | `test_context.py`, `test_knowledge.py` | `knowledge.py` snapshot isolation, reads, lint, `impact`, and `work`, and the vendored copy run from a repository root |
 | `test_standards.py` | `standards.py check` and `ruleset` |
 | `test_status.py`, `test_status_initiative.py` | `status.py` readiness, pagination, and blockers merged into Initiative branches |
@@ -113,7 +113,13 @@ Check that:
   at start and reports after each reconcile, and a confirmed board button
   reaches Orchi, which checks the state before acting;
 - the board looks right inside the app's canvas panel with the app's theme,
-  light and dark;
+  light and dark (headless Chrome renders `board.html` from a sample snapshot
+  outside the app, which shows layout and clicks, not the panel);
+- an answer sent from a crew's page reaches the crew through
+  `answer_session_input` with the right `request_id` and choice, Approve plan
+  through `respond_to_session_plan_v2`, and Open session through
+  `navigate_to`; a crew going on with an assumed answer reports it, and Orchi
+  writes the question and answer comments;
 - before the first design round, a session offers to install the missing
   design skills, and `orchi-designer` subagents started afterwards see them;
 - a living prototype opens in the Browser canvas and reloads after each
