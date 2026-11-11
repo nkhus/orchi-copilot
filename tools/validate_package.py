@@ -7,6 +7,7 @@ import fnmatch
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tomllib
 
@@ -275,7 +276,28 @@ def validate(root: Path = ROOT) -> dict:
             'agents': len(AGENTS), 'files': len(source_files)}
 
 
+def semver(text: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in text.split('.'))
+
+
+def validate_version_bump(root: Path, base: str) -> list[str]:
+    """A change under plugins/ since `base` must raise the plugin's version, or `copilot plugin update` keeps it."""
+    def git(*args: str) -> str:
+        return subprocess.run(['git', *args], cwd=root, check=True, capture_output=True, text=True).stdout
+    if not git('diff', '--name-only', base + '...HEAD', '--', 'plugins/').strip():
+        return []
+    old = json.loads(git('show', base + ':' + PLUGIN + '/plugin.json'))['version']
+    new = json.loads((root / PLUGIN / 'plugin.json').read_text())['version']
+    if semver(new) <= semver(old):
+        return [f'plugins/ changed since {base}, but the plugin version stayed {old}: raise it in plugin.json and '
+                'marketplace.json']
+    return []
+
+
 if __name__ == '__main__':
     result = validate()
+    if '--base' in sys.argv:
+        result['errors'] += validate_version_bump(ROOT, sys.argv[sys.argv.index('--base') + 1])
+        result['ok'] = not result['errors']
     print(json.dumps(result, indent=2))
     raise SystemExit(0 if result['ok'] else 1)

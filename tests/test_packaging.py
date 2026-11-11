@@ -133,3 +133,27 @@ def test_extension_without_entry_or_with_a_package_breaks_validation(tmp_path):
     errors = validator.validate(copy)['errors']
     assert any('needs extension.mjs' in error for error in errors), errors
     assert any('ship no package.json' in error for error in errors), errors
+
+
+def test_plugin_change_requires_a_version_bump(tmp_path):
+    import subprocess
+    repo = tmp_path / 'repo'
+    manifest = repo / 'plugins/orchi/plugin.json'
+    manifest.parent.mkdir(parents=True)
+    git = lambda *args: subprocess.run(['git', *args], cwd=repo, check=True, capture_output=True)
+    git('init', '-q', '-b', 'main')
+    git('config', 'user.email', 'test@example.com')
+    git('config', 'user.name', 'Test')
+    manifest.write_text(json.dumps({'version': '0.1.0'}))
+    git('add', '-A')
+    git('commit', '-q', '-m', 'base')
+    git('checkout', '-q', '-b', 'change')
+    (repo / 'plugins/orchi/skill.md').write_text('changed')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'change')
+    assert validator.validate_version_bump(repo, 'main')
+    manifest.write_text(json.dumps({'version': '0.2.0'}))
+    assert validator.validate_version_bump(repo, 'main') == []
+    git('checkout', '-q', 'main')
+    (repo / 'README.md').write_text('docs only')
+    assert validator.validate_version_bump(repo, 'main') == []
