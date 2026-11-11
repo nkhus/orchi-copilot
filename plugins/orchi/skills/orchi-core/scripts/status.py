@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Read-only overview of Orchi entry points: open Epics and standalone Tasks, their owners, and readiness."""
+"""Read-only overview of tracked work: open Epics and standalone Tasks, who holds them, and readiness.
+
+State comes from standard GitHub signals, so work anyone tracks counts the same: an Issue with an assignee, an open
+linked pull request, or a linked branch is taken; one with sub-issues or a plan (a Requirements section with R1) is
+planned; anything else needs a plan."""
 from __future__ import annotations
 
 import argparse
@@ -9,6 +13,9 @@ import subprocess
 import sys
 from typing import Callable
 
+# The fields `taken` and `planned` read, for any Issue node in a query.
+SIGNALS = ('body assignees(first: 10) { nodes { login } } linkedBranches(first: 5) { nodes { ref { name } } } '
+           'closedByPullRequestsReferences(first: 10) { nodes { number state } }')
 QUERY = '''
 query($owner: String!, $name: String!, $cursor: String) {
   repository(owner: $owner, name: $name) {
@@ -18,7 +25,7 @@ query($owner: String!, $name: String!, $cursor: String) {
       nodes {
         number title url
         labels(first: 20) { nodes { name } }
-        assignees(first: 10) { nodes { login } }
+        %s
         parent { number title }
         subIssues(first: 100) { totalCount nodes { number title state } }
         blockedBy(first: 50) { nodes {
@@ -34,11 +41,13 @@ query($owner: String!, $name: String!, $cursor: String) {
     }
   }
 }
-'''
+'''.replace('%s', SIGNALS)
 TAGS = re.compile(r'\[([A-Z][A-Z0-9]{1,7})\]')
 # Branch names an Issue body records for its work, such as `epic/pay-token-tokenize-cards`.
 BRANCH = re.compile(r'(?<![\w/.-])((?:epic|fix|initiative)/[A-Za-z0-9._/-]*[A-Za-z0-9])')
-ORDER = {'ready': 0, 'check': 1, 'blocked': 2, 'claimed': 3}
+# A plan in an Issue body: a Requirements heading whose section names R1.
+PLAN = re.compile(r'^#{1,6}\s*Requirements\s*$(?:(?!^#{1,6}\s).)*?\bR1\b', re.M | re.S | re.I)
+ORDER = {'ready': 0, 'check': 1, 'blocked': 2, 'unplanned': 3, 'taken': 4}
 
 Runner = Callable[[list[str]], str]
 
@@ -56,9 +65,26 @@ def labelled(labels: list[str], name: str) -> bool:
     return any(label.casefold() == name.casefold() for label in labels)
 
 
-def claimed(labels: list[str]) -> bool:
-    # Accept the common "in progress" spelling as well as the documented label.
-    return any(label.casefold().replace(' ', '-') == 'in-progress' for label in labels)
+def taken(node: dict) -> bool:
+    """Someone holds the Issue: an assignee, an open linked pull request, or a linked branch. Nodes queried without
+    SIGNALS count as not taken."""
+    if names(node.get('assignees'), 'login') or (node.get('linkedBranches') or {}).get('nodes'):
+        return True
+    return any(pr.get('state', 'OPEN') == 'OPEN'
+               for pr in (node.get('closedByPullRequestsReferences') or {}).get('nodes', []))
+
+
+def planned(node: dict) -> bool:
+    """The Issue has native sub-issues or a plan in its body."""
+    children = node.get('subIssues') or {}
+    total = children.get('totalCount', len(children.get('nodes') or []))
+    summary = (node.get('subIssuesSummary') or {}).get('total') or 0
+    return bool(total or summary or PLAN.search(node.get('body') or ''))
+
+
+def stage(node: dict) -> str:
+    """`taken`, `ready` when planned, or `unplanned`."""
+    return 'taken' if taken(node) else 'ready' if planned(node) else 'unplanned'
 
 
 def tags(title: str) -> list[str]:
@@ -133,8 +159,10 @@ def classify(issue: dict) -> dict | None:
         state, detail = blocker_state(node)
         blockers.append({'number': node['number'], 'title': node['title'], 'state': state, 'detail': detail})
     states = {blocker['state'] for blocker in blockers}
-    if claimed(labels):
-        status = 'claimed'
+    if taken(issue):
+        status = 'taken'
+    elif not planned(issue):
+        status = 'unplanned'
     elif 'blocking' in states:
         status = 'blocked'
     elif 'unverified' in states:
@@ -185,13 +213,13 @@ def render(entries: list[dict]) -> str:
             extra.append(f"tasks {entry['tasks']['closed']}/{entry['tasks']['total']}")
         if entry['owners']:
             extra.append('owner ' + ', '.join(entry['owners']))
-        lines.append(f"{entry['status']:<8} {entry['kind']:<4} #{entry['number']} {entry['title']}"
+        lines.append(f"{entry['status']:<9} {entry['kind']:<4} #{entry['number']} {entry['title']}"
                      + (f"  ({'; '.join(extra)})" if extra else ''))
         for blocker in entry['blockers']:
-            lines.append(f"           blocked by #{blocker['number']}: {blocker['detail']}")
+            lines.append(f"            blocked by #{blocker['number']}: {blocker['detail']}")
         for warning in entry['naming']:
-            lines.append(f'           naming: {warning}')
-    lines.append('Snapshot only: confirm predecessor results are on the intended integration branch before claiming.')
+            lines.append(f'            naming: {warning}')
+    lines.append('Snapshot only: confirm predecessor results are on the intended integration branch before taking work.')
     return '\n'.join(lines)
 
 
@@ -205,7 +233,7 @@ def main(argv: list[str] | None = None, run: Runner = gh) -> int:
         entries = report(fetch(repo, run))
     except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as error:
         detail = getattr(error, 'stderr', '') or error
-        print(f'Orchi status error: {detail}'.rstrip(), file=sys.stderr)
+        print(f'Status error: {detail}'.rstrip(), file=sys.stderr)
         return 2
     print(json.dumps({'repository': repo, 'entries': entries}, indent=2) if args.json else render(entries))
     return 0

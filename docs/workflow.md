@@ -17,7 +17,8 @@ repository's Copilot Project (or types `/orchi`); Orchi runs the workflow throug
 | Delivery, review, and verification | `skills/orchi-deliver/SKILL.md`, `references/execution.md`, `references/review-delivery.md`, `references/testing.md` |
 | Subagent roles | `agents/orchi-*.agent.md`, the plugin's custom agents; `references/roles.md` says which writer to start and how to continue it |
 | Readiness of tracked work | `scripts/status.py`, read-only, from GitHub |
-| Issue forms and the PR template | `skills/orchi-core/assets/github/`, written into a repository by [setup](installation.md#repository-setup) |
+| Issue forms | `skills/orchi-core/assets/issues/`, read by the plugin when it files an Issue; never written into a repository |
+| PR template | `skills/orchi-core/assets/github/`, written into a repository by [setup](installation.md#repository-setup) |
 
 Paths are inside `plugins/orchi/`; paths under `references/`, `scripts/`, and
 `assets/` are inside `skills/orchi-core/`. Each detailed rule has one home in a
@@ -41,6 +42,31 @@ Sessions start them with the `task` tool and `agent_type` set to the agent's
 name. The read-only agents (`orchi-scout`, `orchi-researcher`,
 `orchi-reviewer`) have no `edit` tool. Subagents never talk to the user, change
 Issues, push, or merge; their reports are claims the session verifies.
+
+## GitHub signals
+
+A repository holds no Orchi markers, so anyone, with any assistant or none, can
+work in it. Orchi reads the state of work from standard GitHub signals, the same
+ones a person sets:
+
+| State | Signal |
+| --- | --- |
+| Type | The label `Task`, `Epic`, or `Initiative`; the only labels setup creates |
+| Taken | An assignee, a linked branch, or an open pull request that closes the Issue; work a person took counts the same as a crew's |
+| Planned | Native sub-issues, or a `Requirements` section that lists `R1` |
+| Needs a plan | Neither taken nor planned |
+| Blocked | An open native `blocked by` relationship |
+| Exploration | An Issue titled `Explore: <topic>`, without a type label |
+| Lesson | An Issue titled `Lesson: <what failed>`, filed after a delivery |
+| Design Epic | An Epic whose UI design section starts with `Design Epic:` |
+
+Orchi takes an Issue by assigning the owner and pushing the work branch; the
+branch is the worker record. It never writes claim lines, process labels, or a
+pinned pool Issue; crew names, the Summary, the mode, and the pool size appear
+only on the owner's [board](canvases.md). `scripts/status.py` reads these
+signals, and its `taken`, `planned`, and `stage` helpers are shared with the
+board. Claim lines that earlier versions wrote stay in old Issue bodies and are
+ignored.
 
 ## Contracts
 
@@ -69,7 +95,9 @@ edition link the upstream PR that made them ([upstream](upstream.md)).
 | The user talks only to Orchi (the Project's conversation, or `/orchi`); every other skill is hidden from the menu and runs only as a crew's assignment, and a session outside Orchi's crews answers questions and points work to Orchi | The user talks to one conversation and never needs to know which role skill comes next; crews report to Orchi, and Orchi brings back only decisions | Entry skills the user could type in a solo session | [nkhus/orchi#51](https://github.com/nkhus/orchi/pull/51) |
 | Every PR lists each review finding with its resolution or `unresolved`; `blocker` and `major` findings are repaired before the PR is marked ready (in a proof of concept, a `major` is listed as `follow-up`); a `major` is a demonstrated defect a user or the next change will hit, with its scenario and the rule it breaks; a review that finds nothing is valid; the one follow-up checks only the repairs and their regressions, and its verdict is final | Orchi's merge in autonomous mode relies on the PR body, and nobody reads the code after the review; a reviewer asked for defects always finds some, and review loops otherwise never end | Repairing only `blocker` findings with no record of the rest; an undefined `major`; a recheck that reviews the changed paths again | [nkhus/orchi#49](https://github.com/nkhus/orchi/pull/49), [nkhus/orchi#57](https://github.com/nkhus/orchi/pull/57) |
 | An exploration names each assumption its direction cannot work without that nothing has shown yet (an external service or model, access, data) and proves it with a prototype before shaping, without asking; it asks only for access the user alone can grant | In a live run a demo built around a hosted model went through planning and an hour of setup without anyone checking the model could be reached | Prototypes only when the user agrees; finding out in delivery | [nkhus/orchi#57](https://github.com/nkhus/orchi/pull/57) |
-| When Orchi sends an assignment again after an interruption, the crew resumes from the claim, the Issue, and the PR's `Handoff` | A resumed assignment can run in a new session, which must not read its own claim as another owner's | Session-only claim matching | [nkhus/orchi#49](https://github.com/nkhus/orchi/pull/49), [nkhus/orchi#51](https://github.com/nkhus/orchi/pull/51) |
+| When Orchi sends an assignment again after an interruption, the crew resumes from the Issue's assignee and branch, the Issue, and the PR's `Handoff` | A resumed assignment can run in a new session, which must not read the owner's own assignment as another person's | Session-only matching | [nkhus/orchi#49](https://github.com/nkhus/orchi/pull/49), [nkhus/orchi#51](https://github.com/nkhus/orchi/pull/51), [#7](https://github.com/nkhus/orchi-copilot/issues/7) |
+| Orchi reads taken, planned, and blocked work from assignees, linked branches and pull requests, sub-issues, a `Requirements` section, and native `blocked by` relationships; it marks nothing else in GitHub | Developers with other assistants work in the same repository without knowing about Orchi, and their work must count as taken without any Orchi convention | Process labels (`in-progress`, `needs-planning`, `delivery-ready`, `Exploration`, `retro`, `design`), claim lines in Issue bodies, and a pinned "Orchi pool" Issue, all reversed | [#7](https://github.com/nkhus/orchi-copilot/issues/7) |
+| Every Orchi workflow instruction, Issue form, and convention lives in the plugin; a repository holds only tool-neutral development and documentation rules | A repository must not tell other assistants to use Orchi or to refuse work, and must not break for developers without the plugin | An Orchi section in `AGENTS.md`, Orchi instructions in `.github/github-app.yml` and `.github/copilot/settings.json`, and Issue forms in the repository, all reversed | [#7](https://github.com/nkhus/orchi-copilot/issues/7) |
 | The branch hierarchy stays: Initiative branch from main, Epic branches from it, Tasks on their Epic branch | Working documents change several times before they settle; a branch per level lets each settle locally and move into the current documentation at its merge | Flat branches from main for every piece of work | [nkhus/orchi#45](https://github.com/nkhus/orchi/pull/45) |
 | `orchi-reviewer`'s own profile carries every check the review must make, including `ENGINEERING.md` and gate integrity, exceptions, acceptance evidence, and the documentation map | Nobody reads the code after the reviewer, and an agent reads its own profile, not the whole review reference | Relying on the review reference alone | [nkhus/orchi#47](https://github.com/nkhus/orchi/pull/47) |
 | The core skill is `orchi-core`, hidden from the menu and loaded by sessions themselves; `orchi` is the explicit-only entry | Every session reads the core workflow, while the entry holds the authority to start crews and to merge in autonomous mode, so it stays explicit | `orchi` as the core skill | [nkhus/orchi#43](https://github.com/nkhus/orchi/pull/43) |

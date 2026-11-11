@@ -116,7 +116,7 @@ agent. Add a custom rule when review finds the same judgement twice, as the
 ## `ENGINEERING.md`
 
 The [template](../assets/standards/ENGINEERING.md) holds the sections and the
-defaults above. Two tables have a fixed shape, because `standards.py` reads them:
+TypeScript defaults above; for Python, take the Python column. Two tables have a fixed shape, because `standards.py` reads them:
 
 - **Checks**: `Check`, `Tool`, `Command`, `CI job`, `Config`, `Threshold`,
   `Blocking`. `Config` lists the committed configuration files, comma-separated,
@@ -144,7 +144,7 @@ reports that and exits 0. It only checks structure. Whether a change weakens a
 gate is judged by the writer and the review, below. Without the documentation
 workflow, drop the documentation row from the Checks table; without the
 standards workflow, drop the `standards` row. The workflows run copies of the
-scripts in `.github/orchi/scripts/`, which Orchi's
+scripts in `.github/scripts/`, which Orchi's
 [repository preparation](pool.md#prepare-the-repository) commits.
 
 ## Gate integrity
@@ -195,8 +195,8 @@ To replace it, pipe the same output to
 
 ## Hardening
 
-For a project meant to last, planning adds an Issue labelled `needs-planning`
-with `Requested by: Orchi`, blocked by the first run, so a planner plans the
+For a project meant to last, planning adds an Issue without a plan, with
+`Requested by: @<the user's login>`, blocked by the first run, so a planner plans the
 hardening Epic once there is code to check. It blocks nothing, and a dev lead
 runs it beside the product work: one Task per group of the non-core checks the
 code needs, with Dependabot, each fixing what its checks find on main; an open
@@ -221,7 +221,11 @@ rules in `AGENTS.md` and scoped instruction files. Sort each rule:
 
 ## Drift
 
-With the standards workflow, `standards.py check` runs weekly and
-keeps one open Issue, labelled `needs-planning`, listing what drifted, such as
-an expired exception or a check that lost its job. Planning takes it like any
-request; no session starts unattended.
+In a repository with `ENGINEERING.md`, Orchi runs
+`python3 <orchi-core>/scripts/standards.py check` on the default branch when it
+starts, at most once a day. When the check finds something, such as an expired
+exception or a check that lost its job, Orchi keeps one open Issue titled
+`Standards drift`, without a label or a plan, whose body lists the findings in a
+code block; it updates that Issue rather than filing another, and files nothing
+when the check passes. Planning takes it like any request; no session starts
+unattended.

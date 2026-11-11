@@ -148,7 +148,7 @@ def ruleset(root: Path) -> dict:
                        for row in checks(document.read_text(encoding="utf-8"))
                        if row.get("Blocking", "").lower() == "yes" and row.get("CI job")})
     return {
-        "name": "Orchi standards",
+        "name": "Required checks",
         "target": "branch",
         "enforcement": "active",
         "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},

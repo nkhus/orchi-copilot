@@ -6,7 +6,7 @@ import board
 import status
 
 NOW = datetime(2026, 1, 5, 12, 0, tzinfo=timezone.utc)
-CLAIM = 'Assigned to [dev-lead] pay tokens (sess-42) by Orchi on 2026-01-05, started 2026-01-05'
+TAKEN = {'assignees': {'nodes': [{'login': 'dev'}]}}
 
 
 def labels(*names):
@@ -34,13 +34,13 @@ def repository():
     return {
         'defaultBranchRef': {'name': 'main'},
         'initiatives': {'nodes': [{**node(1, '[PAY] Payments', 'Initiative'), 'subIssues': {'totalCount': 3, 'nodes': [
-            {**node(2, '[PAY][TOKEN] Tokens', 'Epic', 'in-progress'), 'subIssuesSummary': {'total': 3, 'completed': 1}},
+            {**node(2, '[PAY][TOKEN] Tokens', 'Epic', **TAKEN), 'subIssuesSummary': {'total': 3, 'completed': 1}},
             {**node(3, '[PAY][CARD] Cards', 'Epic', state='CLOSED'), 'subIssuesSummary': {'total': 2, 'completed': 2}},
-            {**node(4, '[PAY] Fees research', 'Exploration'), 'subIssuesSummary': {'total': 0, 'completed': 0}}]}}]},
+            {**node(4, 'Explore: fees'), 'subIssuesSummary': {'total': 0, 'completed': 0}}]}}]},
         'epics': {'nodes': [
-            {**node(2, '[PAY][TOKEN] Tokens', 'Epic', 'in-progress'), 'parent': {'number': 1}, 'subIssues': {'nodes': [
+            {**node(2, '[PAY][TOKEN] Tokens', 'Epic', **TAKEN), 'parent': {'number': 1}, 'subIssues': {'nodes': [
                 node(5, '[PAY][TOKEN] Column', 'Task'), node(6, '[PAY][TOKEN] Old', 'Task', state='CLOSED'),
-                node(9, '[PAY][TOKEN] API', 'Task', 'in-progress')]}},
+                node(9, '[PAY][TOKEN] API', 'Task', linkedBranches={'nodes': [{'ref': {'name': 'task/api'}}]})]}},
             {**node(10, '[REF] Refunds', 'Epic'), 'parent': None, 'subIssues': {'nodes': []}}]},
         'recent': {'nodes': [
             {**node(5, '[PAY][TOKEN] Column', 'Task'), 'parent': {'number': 2}, 'comments': {'nodes': [q1]}},
@@ -50,12 +50,13 @@ def repository():
                 comment('<!-- orchi:answer {"id": "q2", "answer": "Now"} -->', '2026-01-05T11:30:00Z')]}},
             {**node(12, 'Broken marker'), 'parent': None, 'comments': {'nodes': [
                 comment('<!-- orchi:question {not json} -->')]}},
-            {**node(1, '[PAY] Payments', 'Initiative'), 'parent': None, 'comments': {'nodes': []}}]},
-        'planning': {'nodes': [{'number': 7, 'title': 'Idea', 'url': 'u/7', 'labels': labels('Exploration')},
-                               {'number': 8, 'title': 'Bug', 'url': 'u/8', 'labels': labels('needs-planning')}]},
-        'claimed': {'nodes': [{'number': 2, 'body': 'Context\n\n' + CLAIM}, {'number': 9, 'body': ''},
-                              {'number': 8, 'body': 'Assigned to [planner] bug (sess-8) by Orchi on 2026-01-05, '
-                                                    'started 2026-01-05, waits for #2'}]},
+            {**node(1, '[PAY] Payments', 'Initiative'), 'parent': None, 'comments': {'nodes': []}},
+            {**node(8, 'Bug'), 'parent': None, 'comments': {'nodes': []},
+             'blockedBy': {'nodes': [{'number': 3, 'state': 'CLOSED'}, {'number': 2, 'state': 'OPEN'}]}},
+            {**node(7, 'Explore: idea'), 'parent': None, 'comments': {'nodes': []}},
+            {**node(13, 'Lesson: flaky CI', body='## Requirements\n- R1: retry once'), 'parent': None,
+             'comments': {'nodes': []}},
+            {**node(14, 'Someone else\'s fix', **TAKEN), 'parent': None, 'comments': {'nodes': []}}]},
         'open': {'nodes': [
             {'number': 30, 'title': 'Tokens API', 'url': 'p/30', 'isDraft': False, 'baseRefName': 'main',
              'reviewDecision': None, 'closingIssuesReferences': {'nodes': [{'number': 9}]},
@@ -73,8 +74,8 @@ def repository():
 
 
 def epic():
-    return {'number': 2, 'title': '[PAY][TOKEN] Tokens', 'url': 'u/2', 'labels': labels('Epic', 'in-progress'),
-            'assignees': {'nodes': []}, 'parent': {'number': 1, 'title': '[PAY] Payments'},
+    return {'number': 2, 'title': '[PAY][TOKEN] Tokens', 'url': 'u/2', 'labels': labels('Epic'),
+            **TAKEN, 'parent': {'number': 1, 'title': '[PAY] Payments'},
             'subIssues': {'totalCount': 2, 'nodes': [{'number': 5, 'title': '[PAY][TOKEN] Column', 'state': 'OPEN'},
                                                      {'number': 6, 'title': '[PAY][TOKEN] Old', 'state': 'CLOSED'}]},
             'blockedBy': {'nodes': []}}
@@ -94,14 +95,16 @@ def runner(calls=None):
     return run
 
 
-def test_collect_builds_the_work_tree_with_claims():
+def test_collect_builds_the_work_tree_from_github_signals():
     github = board.collect('owner/name', runner())
     work = {item['number']: item for item in github['work']}
     assert work[1]['kind'] == 'Initiative' and work[1]['progress'] == {'done': 1, 'total': 3}
     assert work[2]['parent'] == 1 and work[2]['progress'] == {'done': 1, 'total': 2}
-    assert work[2]['crew'] == '[dev-lead] pay tokens' and work[2]['session'] == 'sess-42'
+    assert work[2]['status'] == 'taken' and work[9]['status'] == 'taken' and work[1]['status'] == 'ready'
     assert work[5]['parent'] == 2 and work[5]['status'] == 'todo' and 6 not in work
-    assert [(item['number'], item['kind']) for item in github['planning']] == [(7, 'Exploration'), (8, 'needs-planning')]
+    # Untyped Issues nobody holds or planned need a plan; a planned or taken one does not.
+    assert [(item['number'], item['kind']) for item in github['planning']] == [
+        (7, 'Exploration'), (8, 'needs-planning'), (11, 'needs-planning'), (12, 'needs-planning')]
     assert github['planning'][1]['waits_for'] == 2
     assert github['pulls'][0]['checks'] == 'passing' and github['pulls'][0]['closes'] == [9]
     assert github['pulls'][0]['changes'] == ['Adds the token API.', 'Rotates keys.']
@@ -110,14 +113,15 @@ def test_collect_builds_the_work_tree_with_claims():
     assert board.lineage(github['work'], 5) == [1, 2]
 
 
-def test_crews_join_claims_and_order_by_attention():
+def test_crews_join_their_issues_and_order_by_attention():
     github = board.collect('owner/name', runner())
     quiet = (NOW - timedelta(hours=1)).isoformat()
     reported = [
         {'name': '[researcher] idea', 'state': 'free'},
-        {'name': '[planner] bug', 'session_id': 'sess-8', 'state': 'idle', 'since': quiet},
+        {'name': '[planner] bug', 'session_id': 'sess-8', 'state': 'idle', 'since': quiet, 'issue': 8},
         {'name': '[designer] look', 'state': 'idle', 'background': 'build (pid 4)', 'since': NOW.isoformat()},
-        {'name': '[dev-lead] pay tokens', 'session_id': 'sess-42', 'state': 'waiting', 'question': 'Which PSP?'},
+        {'name': '[dev-lead] pay tokens', 'session_id': 'sess-42', 'state': 'waiting', 'question': 'Which PSP?',
+         'issue': 2},
         {'name': '[dev-lead] stray', 'state': 'idle', 'issue': 5, 'since': quiet},
         {'name': '[planner] other', 'state': 'bogus'},
     ]
@@ -182,12 +186,14 @@ def test_questions_come_from_comments_and_reports_until_answered():
 
 def test_board_places_every_card_in_one_column():
     github = board.collect('owner/name', runner())
-    crews = [{'name': '[planner] bug', 'session_id': 'sess-8', 'state': 'working', 'doing': 'Writing the plan'}]
+    crews = [{'name': '[planner] bug', 'session_id': 'sess-8', 'state': 'working', 'doing': 'Writing the plan',
+              'issue': 8}]
     document = board.snapshot('o/n', github, {'crews': crews, 'deferred': [7]}, NOW)
     tasks = {card['number']: card for card in document['board']['tasks']}
     stages = {number: card['stage'] for number, card in tasks.items()}
     assert stages == {5: 'ask', 6: 'done', 9: 'review', 3: 'done', 4: 'plan', 10: 'review', 7: 'backlog',
-                      8: 'progress', 11: 'plan', 12: 'plan', 31: 'progress', 32: 'review'}
+                      8: 'progress', 11: 'plan', 12: 'plan', 13: 'plan', 14: 'progress', 31: 'progress',
+                      32: 'review'}
     assert tasks[5]['state'] == 'Which PSP?' and tasks[5]['detail'] == 'question' and tasks[5]['tone'] == 'orange'
     assert tasks[9]['detail'] == 'pr' and tasks[9]['state'] == 'ready to merge' and tasks[9]['pull']['number'] == 30
     assert tasks[10]['state'] == 'approve plan' and tasks[10]['group'] == '10' and tasks[10]['epic'] == 10
@@ -199,7 +205,7 @@ def test_board_places_every_card_in_one_column():
     # Progress counts work items: a closed Epic by its sub-issue summary, an open one by its Tasks.
     assert groups['1']['stage'] == 'ask' and (groups['1']['done'], groups['1']['total']) == (3, 6)
     assert groups['10']['kind'] == 'Epic' and groups['10']['stage'] == 'review'
-    assert groups['outside']['stage'] == 'review' and groups['outside']['counts']['plan'] == 2
+    assert groups['outside']['stage'] == 'review' and groups['outside']['counts']['plan'] == 3
     epics = {epic['number']: epic for epic in document['board']['epics']}
     assert epics[2]['stage'] == 'ask' and epics[2]['counts'] == {
         'plan': 0, 'backlog': 0, 'progress': 0, 'ask': 1, 'review': 1, 'done': 1}
@@ -235,7 +241,8 @@ def test_history_records_moves_and_back_moves():
 
 def test_cli_prints_the_snapshot_and_reports_errors(tmp_path, capsys):
     state = tmp_path / 'state.json'
-    state.write_text(json.dumps({'mode': 'on', 'crews': [{'name': '[dev-lead] pay tokens', 'state': 'working'}]}))
+    state.write_text(json.dumps({'mode': 'on', 'crews': [{'name': '[dev-lead] pay tokens', 'state': 'working',
+                                                          'issue': 2}]}))
     calls = []
     previous = tmp_path / 'previous.json'
     previous.write_text('not json')

@@ -4,8 +4,10 @@ Use when one conversation, Orchi, takes the user's requests in the Copilot app a
 each hold one role. Orchi is the conversation of a Copilot Project, or a plain session where the user typed `/orchi`;
 its crews are its child sessions, and a crew's workers are the crew's child sessions. Each session follows Orchi; the
 pool adds roles and a message protocol, not a controller. GitHub holds every fact the pool relies on. Messages only
-wake the recipient and point it at that state, so a session that restarts rebuilds its picture from Issues, PRs,
-claims, and the app's session status. The user talks only to Orchi; every other skill runs as a session's assignment.
+wake the recipient and point it at that state, so a session that restarts rebuilds its picture from Issues, their
+assignees and branches, PRs, and the app's session status. The repository holds no Orchi markers: Orchi reads and sets
+only the [signals](github.md#labels-and-signals) anyone uses, so people and other assistants work beside the pool.
+The user talks only to Orchi; every other skill runs as a session's assignment.
 
 The app starts, messages, watches, and archives sessions in any turn, so the pool is built on demand: no session is
 started ahead of work, and nothing waits for the user's turn but the user's own decisions.
@@ -21,8 +23,9 @@ started ahead of work, and nothing waits for the user's turn but the user's own 
 A crew is named `[<role>] <topic>`, where `<role>` is `researcher`, `planner`, `designer`, or `dev-lead`, and
 `<topic>` is the lowercase tag of the Issue it holds (`[planner] pay`, `[dev-lead] pay-token`); a worker is named
 `[worker] <topic> <task>`. No tool renames another session, so a crew keeps the name it started with when it continues
-as another role; its claims and its `now <role>` report carry its current role. Claims name a session by its name and
-its session id, copied from `create_session`'s result or the app's session status, never from memory.
+as another role; its `now <role>` report carries its current role. Orchi names a session by its name and its session
+id, copied from `create_session`'s result or the app's session status, never from memory, and keeps both, with the
+Issue each crew holds, only in its own reports and on the board.
 
 Orchi in a Copilot Project sees, in `get_sessions_status`, only itself and the sessions it coordinates, and the app
 shows its crews' questions in its conversation. A Project may have no checkout of its own: Orchi then works read-only
@@ -35,9 +38,9 @@ children.
 | Role | Skill a crew invokes | Holds | Done when |
 | --- | --- | --- | --- |
 | Researcher | `orchi-explore` | One idea, with the user | The user confirms the shape, or declines |
-| Planner | `orchi-plan` | One request, Exploration, or `needs-planning` Issue | `planned` or `declined` |
+| Planner | `orchi-plan` | One request, Exploration, or Issue that needs a plan | `planned` or `declined` |
 | Planner | `orchi-standards` | Setting up or auditing the project's engineering standards | `planned` or `declined` |
-| Designer | `orchi-design` | One standalone `design` Epic, with the user | Its PR into main is merged |
+| Designer | `orchi-design` | One standalone Design Epic, with the user | Its PR into main is merged |
 | Dev lead | `orchi-deliver` | One standalone Task, standalone Epic, or Initiative | Its PR into main is merged |
 
 A crew writes no product code itself: a dev lead gives every change and review repair to a writer ([Workers](#workers)),
@@ -57,40 +60,45 @@ first checks, read-only and in its checkout ([Sessions](#sessions) says which), 
 - the repository has a GitHub remote and `gh` is authenticated;
 - the default branch has a commit and GitHub has it;
 - `python3 <orchi-core>/scripts/setup.py --check` exits 0, where `<orchi-core>` is the orchi-core skill's base
-  directory: the labels, Issue forms, PR template, workflows, `AGENTS.md` section, `.gitignore` section, and Copilot
-  settings are in place;
-- the setup is committed and pushed: `git status --porcelain` lists none of the paths `.github/orchi/manifest.json`
-  names, nor the manifest, `.github/copilot/settings.json`, `.github/github-app.yml`, or `.gitignore`, and
-  `git diff --quiet origin/<default> --` on those paths succeeds.
+  directory: the type labels, the `AGENTS.md` and PR template sections, and the check workflows with their scripts are
+  in place, and nothing of an earlier setup is left;
+- the setup is on GitHub: no path that `setup.py --paths` prints differs from `origin/<default>`
+  (`git diff --quiet origin/<default> -- <paths>`).
 
-When all hold, it goes on. Otherwise it fixes them in the same turn without asking the user: it starts one
+When all hold, it goes on. When an open PR from `chore/repository-setup` already holds the setup, it asks the user once
+to merge it and goes on meanwhile. Otherwise it fixes the rest in the same turn without asking the user: it starts one
 general-purpose subagent, the setup agent (`task` with `agent_type: general-purpose`), with the absolute repository
 path, the default branch, the absolute path of the orchi-core skill's base directory, and what failed, waits for its
-report, and checks the result (`git log -1 origin/<default>`, `gh label list`). Orchi itself still edits and commits
-nothing. The setup agent:
+report, and checks the result (`gh pr view chore/repository-setup`, `gh label list`). Orchi itself still edits and
+commits nothing. The setup agent:
 
 1. Works in a temporary worktree of `origin/<default>` outside the repository
-   (`git worktree add --detach <temporary folder> origin/<default>`), so the user's checkout and branches stay as they
-   are, and removes it when done. In a repository without commits it works in the main checkout instead.
+   (`git worktree add -b chore/repository-setup <temporary folder> origin/<default>`), so the user's checkout and
+   branches stay as they are, and removes it when done. In a repository without commits it works in the main checkout
+   instead.
 2. Runs `python3 <orchi-core>/scripts/setup.py --project <worktree>` and reads its output. A refusal (a file or
-   section someone edited, or a file Orchi did not create) stops it with a report; it never passes `--replace` unless
+   section someone edited, or a file setup did not create) stops it with a report; it never passes `--replace` unless
    Orchi's brief says the user agreed.
 3. Before every commit, checks the files it stages for credentials, private keys, tokens, `.env` files, and files over
    5 MB, and leaves out and reports any it finds instead of committing them.
-4. In a repository without commits, commits every file Git does not ignore as `Initial Orchi setup`, pushes the default
-   branch with an upstream, and makes it GitHub's default branch. Otherwise it commits only the paths the setup
-   changed, as `Set up Orchi`, and pushes the commit to the default branch. When GitHub refuses that push, it pushes
-   the commit to `chore/orchi-setup` instead and opens a PR to the default branch.
-5. Reports the commit, the branch it pushed, the setup's notes, the files it left out and why, and anything that
-   stopped it. It never force-pushes, rewrites history, or changes branch protection.
+4. In a repository without commits, commits every file Git does not ignore as
+   `chore: set up development rules and checks`, pushes the default branch with an upstream, and makes it GitHub's
+   default branch. Otherwise it commits only the paths the setup changed, with the same subject, pushes
+   `chore/repository-setup`, and opens a PR to the default branch whose body says what each file is for, in neutral
+   words.
+5. Reports the PR or commit, the setup's notes, the files it left out and why, and anything that stopped it. It never
+   pushes to the default branch of a repository with commits, force-pushes, rewrites history, or changes branch
+   protection.
 
 Only these wait for the user, asked once in Orchi's report as a plain question whose yes Orchi carries out, never as
 a command for them to run: no GitHub remote (on their yes the setup agent creates a private repository named after the
 folder with `gh repo create`); `gh` not authenticated (on their yes Orchi runs `gh auth login --web` in the background
-and gives them the one-time code and the link, so they only sign in in their browser); a file left out as a possible secret; a refused setup (keep their
-edit, or replace it); and the setup PR (Orchi merges it on their yes). When the setup created
-`.github/github-app.yml`, Orchi tells the user once that the app applies it only after they review and accept it in
-the repository's settings. Orchi goes on in the turn of that yes, once the repository is ready.
+and gives them the one-time code and the link, so they only sign in in their browser); a file left out as a possible
+secret; a refused setup (keep their edit, or replace it); and the setup PR (Orchi merges it on their yes). Orchi goes on
+in the turn of that yes, once the repository is ready.
+
+Every session that writes in a clone other than Orchi's checkout, a Cloud crew's included, first runs
+`python3 <orchi-core>/scripts/setup.py --exclude`, so `.orchi-tmp/` stays out of Git there.
 
 ## Assign a crew
 
@@ -99,10 +107,10 @@ Orchi routes each request to a role:
 | Request | Role | Assignment |
 | --- | --- | --- |
 | An idea, a new project, or a strategic choice | Researcher | `orchi-explore` with the idea or `#<exploration>` |
-| A clear request, a fix, a `needs-planning` Issue, or a shaped Exploration | Planner | `orchi-plan` with the request or `#<n>` |
+| A clear request, a fix, an Issue that needs a plan, or a shaped Exploration | Planner | `orchi-plan` with the request or `#<n>` |
 | Setting up or auditing the project's engineering standards | Planner | `orchi-standards` with the request, `#<exploration>`, or `audit` |
-| "Take #n" on a `delivery-ready` Epic labelled `design` | Designer | `orchi-design` with `#<n>` |
-| "Take #n" on another `delivery-ready` Issue | Dev lead | `orchi-deliver` with `#<n>` |
+| "Take #n" on a planned Design Epic | Designer | `orchi-design` with `#<n>` |
+| "Take #n" on another planned Issue | Dev lead | `orchi-deliver` with `#<n>` |
 
 Orchi starts one crew per request, in any turn, with `create_session`: a session of the repository named
 `[<role>] <topic>`, with `coordinate_with_creator: true`, `notify_on_idle: "always"`, and a `kickoff` whose `prompt` is
@@ -116,36 +124,37 @@ Cloud sandbox (`execution_location: "cloud"`), for a GitHub repository only. The
 Orchi copies its own session id from `get_sessions_status`; when it cannot find it there, it writes `creator`, and the
 crew reports to the session the app's coordination note on its kickoff names as its creator.
 
-Before giving a crew an Issue, Orchi claims it: `in-progress`, the assignee, and the work reference
-`Assigned to [<role>] <topic> (<session id>) by Orchi on <date>`. A crew adopts its claim when it loads: it appends
-`, started <date>` to the work reference and reports `<id> started`. A request that is not yet an Issue gets no claim;
-its crew writes the claim, already adopted, on the first Issue it creates. A crew that finds its Issue claimed by
-another live session reports `<id> refused: claimed` and stops.
+Before giving a crew an Issue, Orchi takes it by assigning the user (`gh issue edit <n> --add-assignee @me`), so it
+shows as taken to anyone; it writes nothing in the body. The crew reports `<id> started` when it loads, and the branch
+it pushes is its work record. A request that is not yet an Issue is taken when its crew creates the first Issue and
+assigns the user to it. A crew that finds its Issue assigned to someone else reports `<id> refused: taken` and stops;
+a branch or PR of the user's for that Issue is earlier work of the pool, which it resumes.
 
 A crew carries its request through its roles: a researcher continues as the planner, and a planner, once its plan is
-ready, continues with one ready item it planned (a design Epic first, else the first in delivery order), keeps its
-claim on that item, and reports `<id> now <role>`.
+ready, continues with one ready item it planned (a Design Epic first, else the first in delivery order), assigns the
+user to that item, and reports `<id> now <role>`.
 
-Orchi gives a dev lead or designer only an open, unclaimed Issue labelled `delivery-ready` that is also `ready` in
-`status.py`; for `check`, it confirms the blocker's result reached the target first. `status.py` lists Epics and
+Orchi gives a dev lead or designer only an open Issue nobody has taken that is `ready` in `status.py` (planned, and
+no open blocker); for `check`, it confirms the blocker's result reached the target first. `status.py` lists Epics and
 Tasks, so for an Initiative Orchi checks that every native blocker is closed as completed
 (`gh issue view <n> --json blockedBy`). It takes such an Issue when the user names it, and by itself when the Issue
-says `Requested by: Orchi`, unless a later `Delivery cancelled at the user's request` comment says otherwise. It also
-gives a planner, by itself, an open `needs-planning` Issue that says `Requested by: Orchi` once its blockers are
-closed; other `needs-planning` Issues, such as the weekly drift Issue, wait for the user. Asked to
-take work that does not qualify, it says why: being planned (and by which crew), not planned, tracked but not
-labelled, claimed, or blocked; and it offers to plan it. Work Orchi takes by itself waits for the [Limits](#limits).
+says `Requested by: @<the user's login>`, unless a later `Delivery cancelled at the user's request` comment says
+otherwise. It also gives a planner, by itself, an open Issue that needs a plan and says `Requested by: @<the user's
+login>` once its blockers are closed; other Issues that need a plan, such as `Standards drift`, wait for the user. Asked
+to take work that does not qualify, it says why: being planned (and by which crew), not planned, taken (and by whom), or
+blocked; and it offers to plan it. Work Orchi takes by itself waits for the [Limits](#limits).
 
 A Cloud crew works only through subagents (no workers), and its `see it at` links do not open on the user's machine,
 so it shows what changed with screenshots instead. When a crew's session is lost (archived, deleted, or failing every
-turn), Orchi starts a new crew with the same assignment; it resumes from the claim, the Issue, and the PR's `Handoff`.
+turn), Orchi starts a new crew with the same assignment; it resumes from the Issue, its branch, and the PR's
+`Handoff`.
 
 ## A stream of requests
 
 While the user tests or brainstorms, requests arrive faster than crews plan them. Orchi takes each one in and routes
 it; it never reads code for one, guesses a cause, or proposes a solution. It files each defect or request the user
-names as an Issue labelled `needs-planning`, in the user's words, with where they saw it, and `Requested by: Orchi`, so
-nothing waits only in chat. An idea that needs strategic decisions goes to a researcher, a remark on a PR that waits
+names as an Issue without a plan, in the user's words, with where they saw it, and `Requested by: @<the user's
+login>`, so nothing waits only in chat. An idea that needs strategic decisions goes to a researcher, a remark on a PR that waits
 for the user's merge goes to its dev lead as `#<n> rework:`, and a remark on a prototype goes to its researcher as
 `<id> remark: <the user's words>`. It groups the rest by nature (one area of the product, design feedback, a defect in
 existing behavior), gives each group to one planner, the one that already holds that area or else a new one, and tells
@@ -153,17 +162,16 @@ the user in one line per group which crew has it.
 
 ## Planner queue and sub-planners
 
-A planner works on one request at a time and queues the rest Orchi gives it. Orchi claims a queued Issue with the
-planner's work reference followed by `, queued after #<n>`, and sends `#<m> queued`. The planner takes queued Issues in
-order once its current one is planned or declined: it removes the `, queued after #<n>` note and reports
-`#<m> started`. While its queue is not empty, it continues into no delivery item and is not released.
+A planner works on one request at a time and queues the rest Orchi gives it. Orchi assigns the user to a queued Issue
+and sends `#<m> queued`; the queue lives in the planner's conversation and in Orchi's reports, and after a restart
+Orchi sends the queued Issues again. The planner takes queued Issues in order once its current one is planned or
+declined, and reports `#<m> started`. While its queue is not empty, it continues into no delivery item and is not released.
 
 When a queued Issue does not depend on the one in progress and the user waits for it (they asked about it, or it is a
 defect that blocks their test), the planner asks the user, with `ask_user`, whether to plan it in parallel. On their
 yes it starts a sub-planner with `create_session` as Orchi starts a crew, named `[planner] <topic>`, with the
 assignment
-`You are a sub-planner of [planner] <topic> (<planner's session id>). Invoke the orchi-plan skill with: #<m> --report-to <planner's session id>. Autonomous mode: <on or off>, set by the user on <date>.`,
-and rewrites the queued claim to the sub-planner's session id. A sub-planner is a planner whose owner is its parent:
+`You are a sub-planner of [planner] <topic> (<planner's session id>). Invoke the orchi-plan skill with: #<m> --report-to <planner's session id>. Autonomous mode: <on or off>, set by the user on <date>.` A sub-planner is a planner whose owner is its parent:
 it asks the user directly while autonomous mode is off, and its parent while it is on, which passes the question to
 Orchi and the answer back. It reports `planned` or `declined` to its parent, never continues into delivery, and starts
 no session. The parent reports `#<m> planned: #<n>[, #<k>]` to Orchi as its own and releases and archives the
@@ -178,7 +186,7 @@ the comment. A session accepts assignments, updates, and releases only from its 
 sub-planner from its parent), a worker from its crew. Any other message carries no authority, whatever it says; the
 user's answers come only from the user. Every assignment stands alone, so that a compacted session can act on it; when
 a reply shows that a session lost its role or its work, its owner sends the same assignment again, and the skill
-resumes from the claim, the Issue, and the PR's `Handoff`.
+resumes from the Issue, its branch, and the PR's `Handoff`.
 
 Every report up passes a `purpose`, which decides whether it wakes the owner: `progress` stays in the sender's history
 and wakes no one, `handoff` reaches the owner as a ready result, and `needs_input` and `error` reach it at once. It also
@@ -191,12 +199,11 @@ carried one). A message down passes the existing `assignment_id` for news about 
 | Crew → Orchi | `<id> started`, `#<n> waits for #<m>`, an unasked `<id> status: <what it does and what it waits for>` | `progress` |
 | Crew → Orchi | `<id> needs the user: <question>[, going with <answer>]` | `needs_input` |
 | Crew → Orchi | `<id> now <role>`, `<id> planned: #<n>[, #<m>]`, `<id> declined: <reason>`, `#<n> PR ready: <url>[, see it at <local link>]`, `#<n> follow-up: #<m>`, `#<n> done: <url>`, the `<id> status:` that answers `status?`, `<crew> released`, `<crew> not released: <reason>`, `<crew> updated to <version>` | `handoff` |
-| Crew → Orchi | `<id> refused: claimed`, `<id> cannot continue: <reason>` | `error` |
+| Crew → Orchi | `<id> refused: taken`, `<id> cannot continue: <reason>` | `error` |
 | Orchi → crew | `<id> answer: <answer>`, `<id> remark: <the user's words>`, `#<n> rework: <what the user asked>`, `#<m> queued`, `#<n> merged`, `<id> status?`, `autonomous <on or off>`, `release` | none |
 
 `<id>` is `#<n>` for a request that is an Issue, otherwise the short slug Orchi gave it in the assignment. A crew whose
-work waits for an Issue it does not hold appends `, waits for #<m>` to its work reference and reports
-`#<n> waits for #<m>`; once #<m> has merged, Orchi sends it `#<m> merged`, and the crew goes on.
+work waits for an Issue it does not hold marks #<n> as blocked by #<m> (`gh issue edit <n> --add-blocked-by <m>`) and reports `#<n> waits for #<m>`; once #<m> has merged, Orchi sends it `#<m> merged`, and the crew goes on.
 
 ## Questions and plans
 
@@ -399,7 +406,8 @@ that prompt means the mode is on.
 
 ## Limits
 
-Each request the user makes gets its own crew at once. Work Orchi takes by itself (`Requested by: Orchi`) starts only
+Each request the user makes gets its own crew at once. Work Orchi takes by itself (`Requested by: @<the user's login>`)
+starts only
 while fewer crews than the pool size hold work: 3, unless the user names another number; the rest waits and Orchi's
 report says so. A crew starts at most 3 workers at once. When sessions report rate limiting, Orchi and the crews give
 out less work at once until it passes.
@@ -433,14 +441,15 @@ branch, PR, and conversation stays.
 The user can follow and steer Orchi and its crews from GitHub on the web or GitHub Mobile when the repository's app
 configuration allows remote control. At its first start in a repository whose `.github/github-app.yml` does not set
 `automation.remote_control: true`, Orchi recommends it once, in plain words. On their yes, the setup agent of Prepare
-the repository adds `automation:` with `remote_control: true` to that file, commits it as `Allow remote control`, and
-pushes it as setup does; Orchi then tells the user that the app applies it only after they accept the changed
-configuration, and that an organization's policy may still keep it off.
+the repository adds `automation:` with `remote_control: true` to that file on the branch `chore/remote-control`, commits
+it as `chore: allow remote control`, and opens a PR as setup does; Orchi merges it on the user's yes, then tells them
+that the app applies it only after they accept the changed configuration, and that an organization's policy may still
+keep it off.
 
 ## Follow-ups
 
 A dev lead that finds work outside its agreed scope, or a decision the user must make before more work exists, files
-it as an Issue labelled `needs-planning`, with self-contained context, its source, and `Requested by: Orchi`, and
+it as an Issue without a plan, with self-contained context, its source, and `Requested by: @<the user's login>`, and
 reports `#<n> follow-up: #<m>`. Orchi assigns it to a planner crew. A confirmed defect within the agreed scope stays
 with the dev lead.
 

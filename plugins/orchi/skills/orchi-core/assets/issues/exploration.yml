@@ -1,7 +1,7 @@
-name: Orchi Exploration
+name: Exploration
 description: An idea being researched and shaped with the user before any scope is planned.
 title: "Explore: "
-labels: [Exploration]
+labels: []
 body:
   - type: markdown
     attributes:
@@ -78,10 +78,3 @@ body:
     attributes:
       label: Open questions
       description: What is still open, each with what it blocks, the next one to ask first; list questions that can only be sensed so far as such.
-  - type: textarea
-    id: work
-    attributes:
-      label: Work reference
-      description: The claim while someone holds this - the assignee's session or identifier, the branch, and the PR; in a pool, Orchi's `Assigned to crew-<k> (<session id>) by <Orchi> on <date>` line.
-    validations:
-      required: false

@@ -21,12 +21,12 @@ autonomous mode; you write no product code yourself.
 
 ## 1. Load
 
-1. `gh issue view <n>`: it must be an Epic labelled `design`. Otherwise report `#<n> declined: not a design Epic` to
-   Orchi and stop. Read its surfaces, what must stay, whether it replaces `DESIGN.md`, its blockers, and the work
-   reference; resume from the decisions and links it already records.
+1. `gh issue view <n>`: it must be an Epic whose UI design section starts with `Design Epic:`. Otherwise report `#<n> declined: not a Design Epic` to
+   Orchi and stop. Read its surfaces, what must stay, whether it replaces `DESIGN.md`, its blockers, assignees, and
+   branch; resume from the decisions and links it already records.
 2. Check it against items 1–11, 13, and 14 of the Epic readiness checklist; its Tasks come in step 3. Fix gaps from
    linked sources, or ask the user.
-3. Claim it and create its recorded branch from its target. Check it out only to commit design documents, and in a
+3. Take it (assign yourself) and create its recorded branch from its target. Check it out only to commit design documents, and in a
    pool detach afterwards, as the pool reference's [Workers](../orchi-core/references/pool.md#workers) section says for branches.
 4. Read the project's design engine from `DESIGN.md` (`Design engine:`). When the Exploration the Epic came from ran
    a design session (its Design section), copy what the user approved from the commit it links into the Epic branch:
@@ -69,11 +69,11 @@ an answer, write the open question into the Epic, so a lost session loses nothin
 
 While the first run the Epic's UI design field names is open, report `#<n> waits for #<first run>` as the pool
 reference's [Messages](../orchi-core/references/pool.md#messages) says and wait; on `#<first run> merged`, merge main into the Epic branch, so the builds start
-from its stack and screen. Then add each approved surface's build as a Task (the `orchi-task.yml` form when present):
+from its stack and screen. Then add each approved surface's build as a Task (the [Task form](../orchi-core/assets/issues/task.yml)):
 the approved comp, the surface brief, `PRODUCT.md`, the references, the `DESIGN.md` sections when one exists, the
-design engine, states, breakpoints, themes, and accessibility level, with `orchi-designer` as the writer. When the
+design engine, states, breakpoints, themes, and accessibility level, with `design` as the suggested writer. When the
 stack lacks the component library the surfaces need (SmoothUI and its shadcn MCP server for React with Tailwind CSS 4
-and shadcn/ui), the first Task adds it, with `orchi-implementer` as the writer. Check each Task against the Task
+and shadcn/ui), the first Task adds it, with `implementation` as the suggested writer. Check each Task against the Task
 readiness checklist. After the last build, and before the PR is marked ready, write or replace `DESIGN.md` from the
 built surfaces with the user and commit it: `Design engine: <Hallmark | prototype>` on its first line after the title,
 the references, and the system (colour, type, spacing, components, motion) as built; in a Hallmark project, in
@@ -87,7 +87,7 @@ approval or a design choice goes to the user, or to Orchi in autonomous mode.
 
 ## As a crew
 
-Adopt Orchi's claim as the pool's [Assign a crew](../orchi-core/references/pool.md#assign-a-crew) says and follow its
+Take your Issue as the pool's [Assign a crew](../orchi-core/references/pool.md#assign-a-crew) says and follow its
 [Roles](../orchi-core/references/pool.md#roles), [Messages](../orchi-core/references/pool.md#messages), [Autonomous mode](../orchi-core/references/pool.md#autonomous-mode), and [Release](../orchi-core/references/pool.md#release) sections. Ask the user
 directly while autonomous mode is off, and Orchi while it is on, and report `#<n> needs the user: <question>` to Orchi
 as well. Write `PRODUCT.md`, `DESIGN.md`, the references, surface briefs, and approved comps yourself; start

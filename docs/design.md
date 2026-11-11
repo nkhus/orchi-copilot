@@ -2,7 +2,7 @@
 
 How Orchi designs user interfaces: product context and references with the
 user, an engine round and direction rounds of variants, approved comps, and
-builds from them. The design track runs in a `design` Epic held by a designer
+builds from them. The design track runs in a Design Epic held by a designer
 crew, or in an exploration's design session; `orchi-designer` builds the
 variants and the UI Tasks.
 
@@ -20,10 +20,11 @@ variants and the UI Tasks.
 ## The design Epic
 
 A planner sets each piece of UI work's design depth. Work at depth Epic gets a
-standalone Epic labelled `design`, which Orchi gives to a designer crew running
+standalone Design Epic, an Epic whose UI design section starts with
+`Design Epic:`, which Orchi gives to a designer crew running
 `orchi-design`:
 
-1. **Load.** Check the Epic, claim it, and read the project's design engine
+1. **Load.** Check the Epic, take it (assign yourself), and read the project's design engine
    from `DESIGN.md`. When the exploration ran a design session, copy what the
    user approved there.
 2. **With the user, surface by surface.** Write `PRODUCT.md` from the
@@ -90,6 +91,6 @@ delete it when it no longer holds.
 | Every design session and design Epic asks the user for references and proposes three to five that fit the product; the agreed set, with screenshots, is recorded in `docs/design/references/` and given to every variant and build | References raised the variants' scores more than any design skill did | Designing from the brief alone | [nkhus/orchi#59](https://github.com/nkhus/orchi/pull/59) |
 | `PRODUCT.md` and `DESIGN.md` are written with the user by the session that talks to them, never by a subagent; a generated asset is committed only after the user approves it | Both bind all later work, so the user must see them | Writing them unattended in the last build Task | [nkhus/orchi#50](https://github.com/nkhus/orchi/pull/50), [nkhus/orchi#59](https://github.com/nkhus/orchi/pull/59) |
 | Surface briefs and approved comps in `docs/design/surfaces/` are current documentation, updated with their surface; in a redesign, the Epic's approved briefs and comps override the incumbent `DESIGN.md` until the new one lands | Later work builds against a surface as it is, and a redesign must not be pulled back to the look it replaces | Treating briefs as one-off planning files | [nkhus/orchi#50](https://github.com/nkhus/orchi/pull/50) |
-| UI design is an Epic type (`design`) held by a designer crew with its own skill, `orchi-design`; a design Epic stays standalone, outside any Initiative, and blocks the work that builds on it | The design steps need a session that talks to the user, and an Initiative goes to one dev lead crew | None recorded | [nkhus/orchi#43](https://github.com/nkhus/orchi/pull/43) |
+| UI design is a kind of Epic, a Design Epic, whose UI design section starts with `Design Epic:`, held by a designer crew with its own skill, `orchi-design`; a Design Epic stays standalone, outside any Initiative, and blocks the work that builds on it | The design steps need a session that talks to the user, and an Initiative goes to one dev lead crew; a line in the body marks it without a process label in the repository | A `design` label (reversed in [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7)) | [nkhus/orchi#43](https://github.com/nkhus/orchi/pull/43), [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7) |
 | The planner sets each piece of work's design depth: none, brief, or Epic | Most changes need no design step, and variant rounds are costly | None recorded | [nkhus/orchi#43](https://github.com/nkhus/orchi/pull/43) |
 | The design audit runs in review, not in CI | Neither engine ships a detector that knows the project's `DESIGN.md`, and the review already reads the brief and comp | A CI design workflow | [nkhus/orchi#59](https://github.com/nkhus/orchi/pull/59) |

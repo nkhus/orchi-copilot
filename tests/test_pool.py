@@ -35,8 +35,8 @@ def test_crews_are_child_sessions_that_report_by_session_message():
                    '`send_session_message`', '`archive_session`', 'Nobody deletes a session'):
         assert phrase in pool, phrase
     assert '`get_sessions_status`' in entry and '`archive_session`' in entry
-    assert 'Assigned to [<role>] <topic> (<session id>) by Orchi on <date>' in pool
-    assert 'For each claim starting `Assigned to [`' in entry
+    assert 'gh issue edit <n> --add-assignee @me' in pool
+    assert "For each crew's Issue, check that the crew exists" in entry
 
 
 def test_orchi_merges_on_the_users_yes_and_never_deploys():

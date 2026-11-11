@@ -1,4 +1,4 @@
-name: Orchi Task
+name: Task
 description: One reviewable result, either inside an Epic or as a standalone fix.
 title: "[INITIATIVE][EPIC] "
 labels: [Task]
@@ -94,14 +94,9 @@ body:
     id: writer
     attributes:
       label: Suggested writer
-      description: Optional. Whether the change is small and fully determined by this Issue (orchi-fixer) or needs orchi-implementer, and why. The delivering session makes the final choice.
+      description: Optional. fix when the change is small and fully determined by this Issue, design when it builds a user interface, implementation otherwise, and why. The delivering session makes the final choice.
   - type: textarea
     id: questions
     attributes:
       label: Open questions
       description: Unresolved inputs, not presented as decided facts. Resolve any question that affects this Task's approach, or move it to a bounded investigation Task, before anyone starts it.
-  - type: textarea
-    id: work
-    attributes:
-      label: Work reference
-      description: For a standalone Task, filled by the owner on claim - assistant session or identifier, branch, and PR.

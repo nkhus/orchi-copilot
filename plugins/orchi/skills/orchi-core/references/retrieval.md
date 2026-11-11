@@ -26,7 +26,7 @@ its heading, and its path; it is not semantic or cross-language search. Results
 are deterministic in path/line order, limited by `--limit` (1–100, default 20).
 The corpus is every Markdown file in the snapshot except installed skill bundles
 (`.agents/skills/`, `.github/skills/`), custom agent definitions
-(`.github/agents/`), Orchi's vendored scripts (`.github/orchi/`), and vendored
+(`.github/agents/`), and vendored
 directories such as `node_modules/`. Narrow it with one or more `--path PREFIX` options. Use
 `rg` when looking for code or other files; `get` can read any selected text file.
 
@@ -39,6 +39,6 @@ requirements, implementation evidence, and semantic consistency as described in
 
 `lint --since REF` reports only errors not already present in `REF`, matched by
 file and message rather than line number, so existing debt does not hide a new
-break. The documentation workflow (`orchi-docs.yml`) runs it against the PR base branch. `impact` checks
+break. The documentation workflow (`docs-check.yml`) runs it against the PR base branch. `impact` checks
 that a PR body (`--body-file`, or the `PR_BODY` variable) has a filled
 `Documentation impact` section.

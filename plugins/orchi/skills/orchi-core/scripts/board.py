@@ -18,28 +18,24 @@ query($owner: String!, $name: String!) {
     defaultBranchRef { name }
     initiatives: issues(first: 20, states: OPEN, labels: ["Initiative"], orderBy: {field: CREATED_AT, direction: ASC}) {
       nodes {
-        number title url labels(first: 20) { nodes { name } }
+        number title url labels(first: 20) { nodes { name } } %s
         subIssues(first: 50) { totalCount nodes {
-          number title url state labels(first: 10) { nodes { name } } subIssuesSummary { total completed } } }
+          number title url state labels(first: 10) { nodes { name } } subIssuesSummary { total completed } %s } }
       }
     }
     epics: issues(first: 50, states: OPEN, labels: ["Epic"], orderBy: {field: CREATED_AT, direction: ASC}) {
       nodes {
-        number title url labels(first: 10) { nodes { name } } parent { number }
-        subIssues(first: 50) { nodes { number title url state labels(first: 10) { nodes { name } } } }
+        number title url labels(first: 10) { nodes { name } } parent { number } %s
+        subIssues(first: 50) { nodes { number title url state labels(first: 10) { nodes { name } } %s } }
       }
     }
     recent: issues(first: 100, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
       nodes {
-        number title url labels(first: 10) { nodes { name } } parent { number }
+        number title url labels(first: 10) { nodes { name } } parent { number } %s
+        subIssues { totalCount } blockedBy(first: 10) { nodes { number state } }
         comments(last: 20) { nodes { body createdAt } }
       }
     }
-    planning: issues(first: 50, states: OPEN, labels: ["needs-planning", "Exploration"],
-                     orderBy: {field: CREATED_AT, direction: ASC}) {
-      nodes { number title url labels(first: 20) { nodes { name } } }
-    }
-    claimed: issues(first: 100, states: OPEN, labels: ["in-progress"]) { nodes { number body } }
     open: pullRequests(first: 50, states: OPEN, orderBy: {field: CREATED_AT, direction: ASC}) {
       nodes {
         number title url body isDraft baseRefName reviewDecision additions deletions changedFiles
@@ -53,10 +49,9 @@ query($owner: String!, $name: String!) {
     }
   }
 }
-'''
-# The work reference of a claim: `Assigned to [dev-lead] pay (<session id>) by Orchi on <date>`.
-CLAIM = re.compile(r'Assigned to (\[[a-z-]+\] [^\n(]+?) \(([^)\s]+)\)')
-WAITS = re.compile(r'waits for #(\d+)')
+'''.replace('%s', status.SIGNALS)
+# An Issue whose title starts with this is an exploration: an idea being shaped before any plan.
+EXPLORE = 'explore:'
 TITLE = re.compile(r'\[([a-z-]+)\] ')
 ROLES = {'researcher': 'Researcher', 'planner': 'Planner', 'designer': 'Designer', 'dev-lead': 'Dev lead'}
 CHECKS = {'SUCCESS': 'passing', 'FAILURE': 'failing', 'ERROR': 'failing', 'PENDING': 'running', 'EXPECTED': 'running'}
@@ -103,25 +98,18 @@ def collect(repo: str, run: status.Runner = status.gh) -> dict:
         raise ValueError('Repository must be OWNER/NAME: ' + repo)
     data = json.loads(run(['api', 'graphql', '-f', 'query=' + QUERY, '-f', 'owner=' + owner,
                            '-f', 'name=' + name]))['data']['repository']
-    claims, waits = {}, {}
-    for node in data['claimed']['nodes']:
-        body = node.get('body') or ''
-        if match := CLAIM.search(body):
-            claims[node['number']] = {'crew': match[1].strip(), 'session': match[2]}
-        if match := WAITS.search(body):
-            waits[node['number']] = int(match[1])
+    # What an Issue waits for: its first open native blocker.
+    waits = {node['number']: blocker['number'] for node in data['recent']['nodes']
+             for blocker in reversed((node.get('blockedBy') or {}).get('nodes', [])) if blocker['state'] == 'OPEN'}
 
     def item(number, kind, title, url, state, parent, progress):
-        claim = claims.get(number) or {}
         return {'number': number, 'kind': kind, 'title': title, 'url': url, 'status': state, 'parent': parent,
-                'crew': claim.get('crew'), 'session': claim.get('session'), 'progress': progress,
-                'waits_for': waits.get(number)}
+                'progress': progress, 'waits_for': waits.get(number)}
 
     work = []
     for node in data['initiatives']['nodes']:
         children = node['subIssues']
-        work.append(item(node['number'], 'Initiative', node['title'], node['url'],
-                         'claimed' if status.claimed(status.names(node['labels'], 'name')) else 'ready', None,
+        work.append(item(node['number'], 'Initiative', node['title'], node['url'], status.stage(node), None,
                          {'done': sum(child['state'] == 'CLOSED' for child in children['nodes']),
                           'total': children['totalCount']}))
     for entry in status.report(status.fetch(repo, run)):
@@ -137,11 +125,12 @@ def collect(repo: str, run: status.Runner = status.gh) -> dict:
             if child['state'] != 'OPEN' or child['number'] in shown:
                 continue
             work.append(item(child['number'], 'Task', child['title'], child['url'],
-                             'claimed' if status.claimed(status.names(child['labels'], 'name')) else 'todo',
-                             node['number'], None))
-    planning = [item(node['number'], 'Exploration' if status.labelled(status.names(node['labels'], 'name'),
-                                                                      'Exploration') else 'needs-planning',
-                     node['title'], node['url'], 'planning', None, None) for node in data['planning']['nodes']]
+                             'taken' if status.taken(child) else 'todo', node['number'], None))
+    # Issues without a type that nobody holds and nobody planned: explorations and requests that need a plan.
+    planning = [item(node['number'], kind_of(node) if kind_of(node) == 'Exploration' else 'needs-planning',
+                     node['title'], node['url'], 'planning', None, None)
+                for node in sorted(data['recent']['nodes'], key=lambda node: node['number'])
+                if kind_of(node) in {'Exploration', 'Issue'} and status.stage(node) == 'unplanned']
     default = (data.get('defaultBranchRef') or {}).get('name')
     pulls, comments = [], []
     for node in data['open']['nodes']:
@@ -162,7 +151,7 @@ def collect(repo: str, run: status.Runner = status.gh) -> dict:
                'base': node['baseRefName']} for node in data['merged']['nodes']]
     tree = {'initiatives': data['initiatives']['nodes'], 'epics': data['epics']['nodes'],
             'issues': data['recent']['nodes'], 'comments': comments,
-            'claims': claims, 'waits': waits, 'active': [node['number'] for node in data['claimed']['nodes']],
+            'waits': waits,
             'standalone': [entry for entry in work if entry['kind'] == 'Task' and entry['parent'] is None]}
     return {'default_branch': default, 'work': work, 'planning': planning, 'pulls': pulls, 'merged': merged,
             'tree': tree}
@@ -187,22 +176,17 @@ def lineage(work: list[dict], number: int | None) -> list[int]:
 
 
 def crews(github: dict, reported: list[dict], now: datetime) -> list[dict]:
-    """The crews Orchi reported, joined with their claims and ordered by what needs a look first.
+    """The crews Orchi reported, joined with the Issue each holds and ordered by what needs a look first.
 
     A crew's state is Orchi's reading of the app (`working`, `waiting`, `idle`, `stuck`, or `free`); an idle crew with
     a named background run shows as `background`. An idle crew that holds an Issue, waits for no other Issue and no
     merge of its PR, and has been quiet for STALL shows as `stuck`, as does a background run older than LONG_RUN."""
     items = {entry['number']: entry for entry in github['work'] + github['planning']}
-    held = {}
-    for entry in github['work'] + github['planning']:
-        for key in (entry.get('session'), entry.get('crew')):
-            if key and key not in held:
-                held[key] = entry['number']
     merging = {number for pull in github['pulls'] if not pull['draft'] for number in pull['closes']}
     joined = []
     for crew in reported:
         name = crew.get('name') or ''
-        issue = crew.get('issue') or held.get(crew.get('session_id')) or held.get(name)
+        issue = crew.get('issue')
         state = crew.get('state') if crew.get('state') in STATES else 'idle'
         quiet = moment(crew.get('since'))
         reason = crew.get('stuck') or ''
@@ -309,8 +293,6 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
     tree = github.get('tree') or {}
     pulls = github['pulls']
     crews_by_issue = {crew['issue']: crew for crew in document['crews'] if crew.get('issue')}
-    claims = tree.get('claims') or {}
-    active = set(tree.get('active') or [])
     deferred = set(document.get('deferred') or [])
     merges = set(document.get('merges') or [])
     overrides = {str(key): value for key, value in (document.get('stages') or {}).items() if value in COLUMNS}
@@ -332,7 +314,8 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
     def ready(pull):
         return not pull['draft'] and (pull['into_default'] or pull['number'] in merges)
 
-    def card(number, title, url, kind, group, epic, closed=False, labels=(), pull=None):
+    def card(number, title, url, kind, group, epic, closed=False, signal='ready', pull=None):
+        """One card; `signal` is the Issue's GitHub state from status.stage: taken, ready, or unplanned."""
         shown.add(number)
         questions = [question for question in asks.get(number, []) if question['blocking']]
         crew = crews_by_issue.get(number) or {}
@@ -346,16 +329,16 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
             stage, detail = ASKS[question['kind']], question['kind']
         elif any(ready(item) for item in own):
             stage, detail = 'review', 'pr'
-        elif own or status.claimed(list(labels)) or number in active or crew:
+        elif own or signal == 'taken' or crew:
             stage, detail = 'progress', 'run'
-        elif kind in {'Task', 'PR'} and not status.labelled(list(labels), 'needs-planning'):
+        elif kind in {'Task', 'PR'} and signal != 'unplanned':
             stage, detail = 'backlog', 'queued'
         else:
             stage, detail = 'plan', 'needs-plan'
         if not closed and overrides.get(str(number)):
             stage = overrides[str(number)]
         pull_ = next((item for item in own if ready(item)), own[0] if own else None)
-        name = crew.get('name') or (claims.get(number) or {}).get('crew')
+        name = crew.get('name')
         stuck = crew.get('state') == 'stuck'
         entry = {'key': str(number), 'number': number, 'title': title, 'url': url, 'kind': kind, 'group': group,
                  'epic': epic, 'stage': stage, 'detail': detail, 'crew': name, 'session': crew.get('session_id'),
@@ -379,11 +362,11 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
     def children(node, group, epic):
         """The cards of an Epic: its Tasks, and itself when it asks something or has no open Task."""
         made = [card(child['number'], child['title'], child['url'], kind_of(child), group, epic,
-                     child['state'] == 'CLOSED', labels(child)) for child in node['subIssues']['nodes']]
+                     child['state'] == 'CLOSED', status.stage(child)) for child in node['subIssues']['nodes']]
         if not [item for item in made if item['stage'] != 'done'] or any(
                 question['blocking'] for question in asks.get(node['number'], [])):
             made.append(card(node['number'], node['title'], node['url'], kind_of(node), group, epic,
-                             labels=labels(node)))
+                             signal=status.stage(node)))
         return made
 
     open_epics = {node['number']: node for node in tree.get('epics') or []}
@@ -395,20 +378,21 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
             number = child['number']
             if child['state'] == 'CLOSED':
                 summary_ = child.get('subIssuesSummary') or {}
-                made = [card(number, child['title'], child['url'], kind_of(child), key, number, True, labels(child))]
+                made = [card(number, child['title'], child['url'], kind_of(child), key, number, True)]
                 totals = {'done': summary_.get('completed') or 1, 'total': summary_.get('total') or 1}
             elif number in open_epics:
                 made = children(open_epics[number], key, number)
                 totals = {}
             else:
-                made = [card(number, child['title'], child['url'], kind_of(child), key, number, labels=labels(child))]
+                made = [card(number, child['title'], child['url'], kind_of(child), key, number,
+                             signal=status.stage(child))]
                 totals = {}
             epics.append({'number': number, 'title': child['title'], 'url': child['url'], 'kind': kind_of(child),
                           'group': key, **container(made), **totals})
             inside += made
         if not node['subIssues']['nodes']:
             made = [card(node['number'], node['title'], node['url'], 'Initiative', key, node['number'],
-                         labels=labels(node))]
+                         signal=status.stage(node))]
             epics.append({'number': node['number'], 'title': node['title'], 'url': node['url'], 'kind': 'Initiative',
                           'group': key, **container(made)})
             inside += made
@@ -427,16 +411,16 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
     for entry in tree.get('standalone') or []:
         if entry['number'] not in shown:
             outside.append(card(entry['number'], entry['title'], entry['url'], 'Task', 'outside', None,
-                                labels=['in-progress'] if entry['status'] == 'claimed' else ['Task']))
+                                signal=entry['status'] if entry['status'] in {'taken', 'unplanned'} else 'ready'))
     for entry in github['planning']:
         if entry['number'] not in shown:
             outside.append(card(entry['number'], entry['title'], entry['url'], entry['kind'] if entry['kind'] ==
-                                'Exploration' else 'Issue', 'outside', None, labels=['needs-planning']))
+                                'Exploration' else 'Issue', 'outside', None, signal='unplanned'))
     for node in tree.get('issues') or []:
         names = labels(node)
         if node['number'] not in shown and not any(status.labelled(names, kind) for kind in ('Initiative', 'Epic')):
             outside.append(card(node['number'], node['title'], node['url'], kind_of(node), 'outside', None,
-                                labels=names))
+                                signal=status.stage(node)))
     for pull in pulls:
         if not pull['closes'] and pull['number'] not in shown:
             outside.append(card(pull['number'], pull['title'], pull['url'], 'PR', 'outside', None, pull=pull))
@@ -453,8 +437,8 @@ def labels(node: dict) -> list[str]:
 
 def kind_of(node: dict) -> str:
     names = labels(node)
-    return next((kind for kind in ('Initiative', 'Epic', 'Task', 'Exploration') if status.labelled(names, kind)),
-                'Issue')
+    kind = next((kind for kind in ('Initiative', 'Epic', 'Task') if status.labelled(names, kind)), None)
+    return kind or ('Exploration' if node.get('title', '').casefold().startswith(EXPLORE) else 'Issue')
 
 
 def describe(card: dict, questions: list[dict], crew: dict, stuck: bool) -> tuple[str, str]:

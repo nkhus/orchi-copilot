@@ -74,7 +74,7 @@ class ReportTest(unittest.TestCase):
             'number': 622, 'title': '[PE2E][E2E] Verify the journey', 'url': 'https://example.invalid/622',
             'labels': {'nodes': [{'name': 'Epic'}]}, 'assignees': {'nodes': []},
             'parent': {'number': 614, 'title': '[PE2E] Pricing end-to-end journey'},
-            'subIssues': {'totalCount': 0, 'nodes': []},
+            'subIssues': {'totalCount': 0, 'nodes': []}, 'body': '## Requirements\n- R1: the journey passes.',
             'blockedBy': {'nodes': [blocker(body=RECORDED, references=[pr(645, EPIC)])]},
         }
         page = {'data': {'repository': {'issues': {'pageInfo': {'hasNextPage': False, 'endCursor': None},

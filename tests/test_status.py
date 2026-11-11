@@ -10,8 +10,12 @@ def blocker(number, state='CLOSED', reason='COMPLETED', merged=None):
             'closedByPullRequestsReferences': {'nodes': prs}}
 
 
-def issue(number, label='Epic', labels=(), blockers=(), parent=None, owners=(), children=(), title=None, parent_title='Parent'):
-    return {'number': number, 'title': title or (f'[E{number}] Epic' if label == 'Epic' else f'Task {number}'),
+PLAN = '### Requirements\n\n- R1: Orders export as CSV.'
+
+
+def issue(number, label='Epic', labels=(), blockers=(), parent=None, owners=(), children=(), title=None,
+          parent_title='Parent', body=PLAN, **signals):
+    return {**signals, 'body': body, 'number': number, 'title': title or (f'[E{number}] Epic' if label == 'Epic' else f'Task {number}'),
             'url': f'https://example.invalid/{number}',
             'labels': {'nodes': [{'name': name} for name in (label, *labels)]},
             'assignees': {'nodes': [{'login': login} for login in owners]},
@@ -28,8 +32,26 @@ def test_readiness_states():
     assert classify(issue(3, blockers=[blocker(9)]))['status'] == 'check'
     assert classify(issue(4, blockers=[blocker(9, state='OPEN', reason=None)]))['status'] == 'blocked'
     assert classify(issue(5, blockers=[blocker(9, reason='NOT_PLANNED', merged='main')]))['status'] == 'blocked'
-    assert classify(issue(6, labels=['in progress'], blockers=[blocker(9, state='OPEN')]))['status'] == 'claimed'
-    assert classify(issue(7, labels=['In-Progress']))['status'] == 'claimed'
+    assert classify(issue(6, owners=['dev'], blockers=[blocker(9, state='OPEN')]))['status'] == 'taken'
+    assert classify(issue(7, labels=['in-progress']))['status'] == 'ready'
+
+
+def test_taken_from_assignee_linked_pull_request_or_branch():
+    assert classify(issue(1, linkedBranches={'nodes': [{'ref': {'name': 'fix/rounding'}}]}))['status'] == 'taken'
+    open_pr = {'nodes': [{'number': 30, 'state': 'OPEN'}]}
+    assert classify(issue(2, closedByPullRequestsReferences=open_pr))['status'] == 'taken'
+    closed_pr = {'nodes': [{'number': 31, 'state': 'CLOSED'}]}
+    assert classify(issue(3, closedByPullRequestsReferences=closed_pr))['status'] == 'ready'
+    assert classify(issue(4, owners=['someone'], body=''))['status'] == 'taken'
+
+
+def test_planned_from_sub_issues_or_a_requirements_section():
+    assert classify(issue(1, body=''))['status'] == 'unplanned'
+    assert classify(issue(2, body='Make exports faster. R1 maybe.'))['status'] == 'unplanned'
+    assert classify(issue(3, body='## Requirements\n\nTBD\n\n## Notes\nR1 later'))['status'] == 'unplanned'
+    assert classify(issue(4, body='', children=['OPEN']))['status'] == 'ready'
+    assert classify(issue(5, body='## requirements\n1. R1 - export', blockers=[blocker(9, state='OPEN')]))[
+        'status'] == 'blocked'
 
 
 def test_only_standalone_tasks_are_entry_points():
@@ -56,10 +78,11 @@ def test_title_tags_follow_lineage():
 
 
 def test_report_orders_by_readiness_and_renders_blockers():
-    entries = report([issue(1, labels=['in-progress']), issue(2, blockers=[blocker(9, state='OPEN')]), issue(3)])
-    assert [entry['number'] for entry in entries] == [3, 2, 1]
+    entries = report([issue(1, owners=['dev']), issue(2, blockers=[blocker(9, state='OPEN')]), issue(3),
+                      issue(4, body='')])
+    assert [entry['number'] for entry in entries] == [3, 2, 4, 1]
     text = render(entries)
-    assert 'ready    Epic #3' in text and 'blocked by #9: open' in text
+    assert 'ready     Epic #3' in text and 'unplanned Epic #4' in text and 'blocked by #9: open' in text
     assert render([]) == 'No open Epics or standalone Tasks.'
 
 

@@ -5,8 +5,8 @@ user's requests and runs each one through a crew, a child session that holds one
 role, and a crew runs long or parallel work through workers, its own child
 sessions. GitHub Issues, branches, and PRs hold every fact the pool relies on;
 messages only wake a session and point it at that state, so a session that
-restarts rebuilds its picture from Issues, PRs, claims, and the app's session
-status. The [pool reference](../plugins/orchi/skills/orchi-core/references/pool.md)
+restarts rebuilds its picture from Issues, assignees, branches, PRs, and the
+app's session status. The [pool reference](../plugins/orchi/skills/orchi-core/references/pool.md)
 defines the rules; this page says how they fit the app.
 
 ## Structure
@@ -37,12 +37,16 @@ and done.
 
 On every start, Orchi checks the repository read-only: a GitHub remote, `gh`
 authenticated, a pushed default branch, `setup.py --check` passing, and the
-setup committed and pushed. When something fails, it starts one setup subagent
-(`task` with `agent_type: general-purpose`) that runs setup in a temporary
-worktree of the default branch, checks the staged files for secrets, and commits
-`Set up Orchi` to the default branch, or opens a `chore/orchi-setup` PR when
-GitHub refuses the push. The user is asked only what they alone can answer: no
-remote, `gh` not signed in, a possible secret, a refused setup, and the setup PR.
+setup on the default branch on GitHub. When something fails, it starts one setup
+subagent (`task` with `agent_type: general-purpose`) that runs setup in a
+temporary worktree on the branch `chore/repository-setup`, checks the staged
+files for secrets, commits `chore: set up development rules and checks`, and
+opens a PR to the default branch; only a repository without commits gets a
+direct initial push. It never pushes to a default branch that has commits. The
+user is asked only what they alone can answer: no remote, `gh` not signed in, a
+possible secret, a refused setup, and merging the setup PR, which Orchi does not
+wait for. Every session that writes in another clone, such as a Cloud crew, runs
+`setup.py --exclude` there so `.orchi-tmp/` stays out of Git.
 Orchi then reads its automations for the autonomous mode, checks for a newer
 Orchi, and, once per repository, recommends remote control.
 
@@ -60,15 +64,18 @@ crew invokes its role's skill:
 | Role | Skill | Holds |
 | --- | --- | --- |
 | Researcher | `orchi-explore` | One idea, with the user |
-| Planner | `orchi-plan` or `orchi-standards` | One request, Exploration, `needs-planning` Issue, or a standards audit |
-| Designer | `orchi-design` | One standalone `design` Epic, with the user |
+| Planner | `orchi-plan` or `orchi-standards` | One request, Exploration, Issue that needs a plan, or a standards audit |
+| Designer | `orchi-design` | One standalone Design Epic, with the user |
 | Dev lead | `orchi-deliver` | One standalone Task, standalone Epic, or Initiative |
 
-Before giving a crew an Issue, Orchi claims it: `in-progress`, the assignee,
-and `Assigned to [<role>] <topic> (<session id>) by Orchi on <date>`. A
+Before giving a crew an Issue, Orchi takes it by assigning the user
+(`gh issue edit <n> --add-assignee @me`) and writes nothing in its body; the
+crew's assignment and reports name its session, role, and Issue. Work that
+someone else assigned, branched, or opened a PR for is taken, so Orchi leaves
+it alone. A
 researcher continues as the planner, and a planner continues with one ready item
 it planned; the session keeps its first name, because no tool renames another
-session, and its claim and `now <role>` report carry its current role. Each
+session, and its assignment and `now <role>` report carry its current role. Each
 request the user makes gets a crew at once; work Orchi takes by itself waits
 while three crews hold work, unless the user names another pool size.
 
@@ -125,7 +132,7 @@ crews run in `autopilot` mode, and Orchi merges a PR into main when its checks
 pass, its review leaves no unresolved `blocker` or `major`, and its main outcome
 is proven on the real path. In both modes only the user decides money, access
 and credentials, deploying, anything destructive or irreversible, removing
-something users have today, and a change of an Initiative's direction; a claim
+something users have today, and a change of an Initiative's direction; a result
 verified only as `Limited` or `Not established` merges only on the user's yes.
 
 Switching the mode changes each crew's session mode through
@@ -174,7 +181,8 @@ again; Issues, branches, PRs, and conversations stay.
 Once per repository, Orchi recommends remote control, so the user can follow
 and steer the pool from GitHub on the web or GitHub Mobile. On their yes, its
 setup agent sets `automation.remote_control: true` in `.github/github-app.yml`
-and pushes it; the app applies it after the user accepts the changed
+on the branch `chore/remote-control` and opens a PR, which Orchi merges on the
+user's yes; the app applies it after the user accepts the changed
 configuration, and an organization's policy can still keep it off.
 
 ## Decisions
@@ -185,18 +193,21 @@ delete it when it no longer holds.
 | Decision | Reason | Rejected | Since |
 | --- | --- | --- | --- |
 | Orchi is the conversation of a Copilot Project, and crews are its child sessions started with `create_session` and messaged with `send_session_message` | The Project lists its child sessions by state (needs input, working, done) and shows their questions in its conversation, which is the overview the user needs | A host-specific session sidebar; pasting commands into new sessions | [nkhus/orchi-copilot#2](https://github.com/nkhus/orchi-copilot/issues/2) |
-| Orchi prepares the repository itself on start, through a setup subagent that commits and pushes, and asks the user only what they alone can answer | Crews' worktrees and CI start from the default branch on GitHub, so an uncommitted setup breaks every crew | Asking the user to run setup, commit, and push | [nkhus/orchi-copilot#2](https://github.com/nkhus/orchi-copilot/issues/2) |
+| Orchi prepares the repository itself on start, through a setup subagent that opens a `chore/repository-setup` PR, and asks the user to merge it; only an empty repository gets a direct initial push | Crews' worktrees and CI start from the default branch on GitHub, and a change to a shared repository goes through review like any other; the setup agent never pushes to a default branch with commits | Asking the user to run setup; committing setup straight to the default branch (reversed in [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7)) | [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7) |
 | The user starts Orchi by typing `/orchi` once in the Project; the entry skill keeps `disable-model-invocation` | The model cannot be relied on to start a skill from plain words, and a conversation that turns into Orchi by accident would start crews the user did not ask for | Letting the model invoke the entry skill; project instructions that make every Project conversation Orchi | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | A Project conversation without a checkout works read-only in the repository's local checkout and passes `project_id` to `create_session` | Orchi needs the repository's files and `gh` context; a crew must land in the same repository | Asking the user for a path; a worktree for Orchi itself | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | Every kickoff names its mode: `interactive` or `autopilot` for a crew, `autopilot` for a worker | The app starts a kickoff in plan mode otherwise, and a plan waiting for approval stalls the pool | Plan mode for crews | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | Crews run in local worktrees; a Cloud sandbox only when the user asks, and a crew there uses subagents only | Local crews give `see it at` links and the user's own tools; whether Orchi's plugin is installed in a sandbox is unverified, so a Cloud crew reports `cannot continue` when it is not | Cloud by default | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
-| A crew keeps its first session name; its claim and `now <role>` carry its current role | No app tool renames another session | Renaming sessions on a role change | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
+| A crew keeps its first session name; its assignment and `now <role>` report carry its current role | No app tool renames another session | Renaming sessions on a role change | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | Reports pass a `purpose` and the `assignment_id`; messages down pass none or the existing one | The app wakes a coordinator only for results, questions, and errors, and ties each report to its assignment | One-line messages without metadata | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | Questions stay in the crew's session; Orchi relays or answers them with the app's tools, never by asking again | The Project already mirrors questions; asking twice splits the answer | Orchi re-asking each crew question in its own conversation | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | Agent Merge shepherds a PR; `merge_pr` only on the user's yes to that PR, and Orchi merges itself in autonomous mode | Agent Merge repairs CI, reviews, and conflicts without a crew's turn, but merging stays within the user's authority | Agent Merge with `merge_pr` whenever autonomous mode is on; no Agent Merge | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | Writers are subagents by default; a worker is a per-task child session of the crew, archived on release | Git lets one worktree check out a branch, so parallel Tasks and long runs need their own worktree; per-task sessions need no clearing, which no app tool does | A standing pool of workers built ahead and cleared after each task | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | Autonomous mode keeps a 30-minute reconcile automation on Orchi, whose existence records the mode | The pool must move while the user is away, and the mode must survive a restart without a state file | A notes file; a dashboard snapshot check | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
-| Stalls come from `notify_on_idle` and `get_sessions_status` | The app reports idle, busy time, questions, plans, and errors per session | Polling sessions; process lines in claims | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
+| Stalls come from `notify_on_idle` and `get_sessions_status` | The app reports idle, busy time, questions, plans, and errors per session | Polling sessions; process lines in Issues | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | The pool size is 3 for work Orchi takes by itself; the user's requests start at once | Bounds parallel sessions and rate limits without making the user wait | A fixed pool built at start | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | Orchi updates itself through the plugin marketplace on the user's yes and re-invokes busy crews | Plugin files change, while Issues, branches, PRs, and conversations stay | Reinstalling per repository | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
-| Remote control is recommended once and set in `.github/github-app.yml` by the setup agent | The app reads it from the repository's configuration, and the user must accept it there | Toggling it per session | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
+| Remote control is recommended once and set in `.github/github-app.yml` through a `chore/remote-control` PR that Orchi merges on the user's yes | The app reads it from the repository's configuration, the user must accept it there, and a change to the repository goes through a PR | Toggling it per session; pushing it to the default branch | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3), [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7) |
+
+| Orchi takes an Issue by assigning the user; a crew's session, role, and Issue live in its assignment and reports, and crew names, the Summary, the mode, and the pool size appear only on the user's board | Other people and assistants must see ordinary GitHub state: an assignee and a branch say the work is taken | Claim lines in Issue bodies, an `in-progress` label, a pinned pool Issue (reversed in [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7)) | [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7) |
+| Work anyone else took, assigned or with a linked branch or PR, is taken for the pool too, and Orchi takes by itself only Issues that say `Requested by: @<the user's login>` | A person or another assistant may work in the repository without knowing about Orchi | Labels that mark Orchi's own work (reversed in [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7)) | [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7) |

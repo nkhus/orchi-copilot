@@ -12,7 +12,7 @@ status and open questions, and a crew's page shows all its questions to answer a
 the Orchi Summary closes the tab. **Board** is a kanban on three levels (Initiatives, an Initiative's Epics, an Epic's
 Tasks, and Outside Initiatives for Issues and PRs with none) in six columns: Needs planning, Backlog, In progress,
 Questions for you, Your review, and Done. A Task's page shows what the user decides there. The board reads GitHub
-through `scripts/board.py` every five minutes and on Refresh: the backlog, PRs, claims, and the question and answer
+through `scripts/board.py` every five minutes and on Refresh: the backlog, PRs, assignees and linked branches, and the question and answer
 comments of the pool's [Questions and plans](pool.md#questions-and-plans). It adds what only Orchi knows from its
 `update_pool` reports, and writes nothing to GitHub. Orchi moves cards by changing the real state; the user's moves
 and answers on the board are requests to Orchi.

@@ -1,6 +1,6 @@
 # <Area>
 
-<!-- Orchi template for `docs/<area>/README.md`: how one area of the product is
+<!-- Template for `docs/<area>/README.md`: how one area of the product is
 built now. Update it in the same PR as the code the map assigns to it. Describe
 the present only; Git keeps the past. -->
 

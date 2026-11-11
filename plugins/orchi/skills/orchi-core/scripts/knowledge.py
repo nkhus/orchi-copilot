@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only Orchi Markdown search, exact reads, local-link validation, and documentation checks for PRs."""
+"""Read-only Markdown search, exact reads, local-link validation, and documentation checks for PRs."""
 from __future__ import annotations
 
 import argparse
@@ -14,8 +14,8 @@ import subprocess
 from urllib.parse import unquote, urlsplit
 
 
-# Installed skill bundles, agent definitions, Orchi's vendored scripts, and vendored trees are not project documentation.
-EXCLUDED_PREFIXES = ('.agents/skills/', '.github/skills/', '.github/agents/', '.github/orchi/')
+# Installed skill bundles, agent definitions, and vendored trees are not project documentation.
+EXCLUDED_PREFIXES = ('.agents/skills/', '.github/skills/', '.github/agents/')
 EXCLUDED_PARTS = {'node_modules', 'vendor', '.venv', 'venv', 'site-packages'}
 
 
@@ -224,11 +224,11 @@ def main() -> int:
                 existing, errors = len(errors) - len(introduced), introduced
             for error in errors:
                 print(error)
-            summary = f'Orchi documentation lint: {len(docs.names)} files, {len(errors)} errors'
+            summary = f'Documentation lint: {len(docs.names)} files, {len(errors)} errors'
             print(summary + (f' (new since {args.since}; {existing} pre-existing ignored)' if args.since else ''))
             return int(bool(errors))
     except (ValueError, OSError, UnicodeError, subprocess.CalledProcessError) as error:
-        print(f'Orchi knowledge error: {error}', file=__import__('sys').stderr)
+        print(f'Knowledge error: {error}', file=__import__('sys').stderr)
         return 2
     return 0
 

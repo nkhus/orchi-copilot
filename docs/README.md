@@ -12,7 +12,7 @@ and keep the decisions still in force.
 | [`README.md`](../README.md) | What Orchi is, how it works in the Copilot app, and how to start |
 | [`docs/workflow.md`](workflow.md) | The core workflow: exploration, planning, delivery, review, subagent roles, Issue forms |
 | [`docs/pool.md`](pool.md) | Orchi as a Copilot Project, crews and workers as child sessions, messages, questions, autonomous mode, merge, release, updates |
-| [`docs/design.md`](design.md) | User interface design: the design track, the `design` Epic, and the designer agent |
+| [`docs/design.md`](design.md) | User interface design: the design track, the Design Epic, and the designer agent |
 | [`docs/canvases.md`](canvases.md) | The plugin's canvases: the Orchi board, the design board, and the Browser canvas |
 | [`docs/standards.md`](standards.md) | Engineering standards: `ENGINEERING.md`, the default stack and checks, gate integrity |
 | [`docs/context.md`](context.md) | Project context: current documentation, working documents, the ownership map and its checks |
@@ -40,7 +40,7 @@ and keep the decisions still in force.
 | `plugins/orchi/skills/orchi-core/references/roles.md` | `docs/workflow.md`, `docs/design.md` | Workflow |
 | `plugins/orchi/agents/**` | `docs/workflow.md`, `README.md` | Workflow |
 | `plugins/orchi/skills/orchi-core/scripts/status.py` | `docs/workflow.md` | Workflow |
-| `plugins/orchi/skills/orchi-core/assets/github/ISSUE_TEMPLATE/**` | `docs/workflow.md` | Workflow |
+| `plugins/orchi/skills/orchi-core/assets/issues/**` | `docs/workflow.md` | Workflow |
 | `plugins/orchi/skills/orchi-core/assets/github/pull_request_template.md` | `docs/workflow.md` | Workflow |
 | `plugins/orchi/skills/orchi/**` | `docs/pool.md`, `README.md` | Pool |
 | `plugins/orchi/skills/orchi-work/**` | `docs/pool.md` | Pool |
@@ -54,12 +54,12 @@ and keep the decisions still in force.
 | `plugins/orchi/skills/orchi-core/references/standards.md` | `docs/standards.md` | Standards |
 | `plugins/orchi/skills/orchi-core/scripts/standards.py` | `docs/standards.md` | Standards |
 | `plugins/orchi/skills/orchi-core/assets/standards/**` | `docs/standards.md` | Standards |
-| `plugins/orchi/skills/orchi-core/assets/github/workflows/orchi-standards.yml` | `docs/standards.md` | Standards |
+| `plugins/orchi/skills/orchi-core/assets/github/workflows/standards-check.yml` | `docs/standards.md` | Standards |
 | `plugins/orchi/skills/orchi-core/references/knowledge.md` | `docs/context.md` | Context |
 | `plugins/orchi/skills/orchi-core/references/retrieval.md` | `docs/context.md` | Context |
 | `plugins/orchi/skills/orchi-core/scripts/knowledge.py` | `docs/context.md` | Context |
 | `plugins/orchi/skills/orchi-core/assets/docs/**` | `docs/context.md` | Context |
-| `plugins/orchi/skills/orchi-core/assets/github/workflows/orchi-docs.yml` | `docs/context.md` | Context |
+| `plugins/orchi/skills/orchi-core/assets/github/workflows/docs-check.yml` | `docs/context.md` | Context |
 | `plugins/orchi/skills/orchi-core/scripts/setup.py` | `docs/installation.md`, `docs/pool.md` | Installation |
 | `plugins/orchi/plugin.json` | `docs/installation.md` | Installation |
 | `.github/plugin/marketplace.json` | `docs/installation.md` | Installation |

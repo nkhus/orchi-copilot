@@ -30,7 +30,7 @@ const POOL_SCHEMA = object({
             name: { type: "string", description: "The crew's session name, `[<role>] <topic>`." },
             session_id: { type: "string" },
             state: { type: "string", enum: STATES, description: "waiting = needs the user's input." },
-            issue: { type: "integer", description: "The Issue it holds, when its claim does not show it." },
+            issue: { type: "integer", description: "The Issue it holds, as its assignment names it." },
             doing: { type: "string", description: "What it does now, in a few plain words." },
             question: { type: "string", description: "Its question, while it waits for input." },
             background: { type: "string", description: "Its background run, while it is idle." },

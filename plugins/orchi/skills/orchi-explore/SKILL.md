@@ -34,8 +34,8 @@ its own branch, `explore/<slug>`, holds only its working folder.
 
 ## 2. Phases
 
-Run the reference's phases in order: Frame (create the Issue, with
-`orchi-exploration.yml` when the repository has it, and the `explore/<slug>`
+Run the reference's phases in order: Frame (create the Issue from the
+[Exploration form](../orchi-core/assets/issues/exploration.yml), and the `explore/<slug>`
 branch with `docs/work/<slug>/`, once the user agrees on the destination), Research, Diverge, Design (the
 [design session](../orchi-core/references/exploration.md#design-session) for a product with a user interface), Converge,
 Shape. Brief each `orchi-researcher` and `orchi-designer` with its mode and the inputs its role lists; when one returns
@@ -58,7 +58,7 @@ For a feature, fix, or redesign of an existing product, run the phases without i
 
 ## As a crew
 
-Adopt Orchi's claim as the pool's [Assign a crew](../orchi-core/references/pool.md#assign-a-crew) says, follow its [Roles](../orchi-core/references/pool.md#roles),
+Take your Issue as the pool's [Assign a crew](../orchi-core/references/pool.md#assign-a-crew) says, follow its [Roles](../orchi-core/references/pool.md#roles),
 [Messages](../orchi-core/references/pool.md#messages), and [Autonomous mode](../orchi-core/references/pool.md#autonomous-mode) sections and, on `release`, its
 [Release](../orchi-core/references/pool.md#release) section. Ask the user directly, with `ask_user`, while autonomous mode is off, and Orchi while it is on, except
 prototype mode's picks and remarks, which wait for the user; take Orchi's `<id> remark:` as a remark of the user's.

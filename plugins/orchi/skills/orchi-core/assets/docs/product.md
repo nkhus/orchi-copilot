@@ -1,6 +1,6 @@
 # <Feature>
 
-<!-- Orchi template for `docs/product/<feature>.md`: what a user can see and do
+<!-- Template for `docs/product/<feature>.md`: what a user can see and do
 now, written for the person who owns the product and reads no code. Every
 criterion names the acceptance test that checks it as `path::test name`; the
 review checks that the test exists, runs, and asserts the criterion. -->

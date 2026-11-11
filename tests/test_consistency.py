@@ -38,9 +38,8 @@ def test_delivery_steps_match_the_review_and_knowledge_references():
 
 
 def test_orchi_picks_up_a_requested_plan_once_unblocked():
-    assert "open `needs-planning` Issues that say `Requested by: Orchi` once their blockers are closed" in prose(
-        "orchi/SKILL.md")
-    assert "the weekly drift Issue, wait for the user" in prose("orchi-core/references/pool.md")
+    assert "open Issues nobody holds that say it and have no plan" in prose("orchi/SKILL.md")
+    assert "other Issues that need a plan, such as `Standards drift`, wait for the user" in prose("orchi-core/references/pool.md")
 
 
 def test_an_exploration_with_several_items_hands_its_folder_to_the_first():
@@ -56,7 +55,7 @@ def test_research_answers_reach_the_crew_in_full():
 
 def test_references_agree_on_branches_labels_pr_sections_and_readiness():
     github = prose("orchi-core/references/github.md")
-    for phrase in ("`design` for an Epic a designer runs", "`explore/card-payments`", "`task/<slug>` from the Epic branch",
+    for phrase in ("an Epic whose UI design section starts with `Design Epic:`", "`explore/card-payments`", "`task/<slug>` from the Epic branch",
                    "`prototype/<slug>`, never merged", "**Exceptions:**", "documentation and standards check workflows"):
         assert phrase in github, phrase
     assert "branches that merge into the Epic branch" in prose("orchi-core/references/execution.md")
@@ -67,9 +66,9 @@ def test_references_agree_on_branches_labels_pr_sections_and_readiness():
 def test_flows_do_not_stall_and_keep_user_only_questions():
     pool, entry, deliver = prose("orchi-core/references/pool.md"), prose("orchi/SKILL.md"), prose("orchi-deliver/SKILL.md")
     assert "for an Initiative Orchi checks that every native blocker is closed as completed" in pool
-    assert "a `design` Epic has none yet" in prose("orchi-core/references/readiness.md")
+    assert "a Design Epic has none yet" in prose("orchi-core/references/readiness.md")
     assert "and that Orchi takes it from here" in prose("orchi-plan/SKILL.md")
-    assert "An Epic labelled `design` → report `#<n> declined: a design Epic goes to a designer crew`" in deliver
+    assert "An Epic whose UI design section starts with `Design Epic:` → report `#<n> declined: a Design Epic goes to a designer crew`" in deliver
     assert "anything destructive or irreversible, removing or replacing something users can do or see today" in pool
     assert "and checks they asked to do by hand" in pool
     assert "Never ask a technical question" in pool
@@ -77,8 +76,8 @@ def test_flows_do_not_stall_and_keep_user_only_questions():
     assert "and whether its PR was merged (then send `#<n> merged`)" in entry
     assert "has been idle without a report is asked `<id> status?` once" in pool
     assert "`notify_on_idle: \"always\"`" in pool
-    assert "the session it names has stopped" in deliver and "the session it names has stopped" in prose(
-        "orchi-core/references/execution.md")
+    assert "someone else is assigned, or a branch or PR not of this delivery holds it" in deliver
+    assert "Confirm the former writer has stopped" in prose("orchi-core/references/execution.md")
     assert "only `orchi-plan` closes the Exploration" in prose("orchi-standards/SKILL.md")
     assert "Orchi [prepares it](pool.md#prepare-the-repository) before any crew starts" in prose(
         "orchi-core/references/exploration.md")
@@ -109,8 +108,8 @@ def test_the_user_answers_only_product_questions_and_nothing_waits_needlessly():
     assert "create its Tasks yourself: the user agreed its outcome" in deliver
     assert "merge main into the Initiative branch first" in deliver
     assert "`#<n> waits for #<m>`" in prose("orchi-core/references/pool.md")
-    assert "appends `, waits for #<m>` to its work reference" in prose("orchi-core/references/pool.md")
-    assert "when it says `waits for #<m>` and #<m> has merged, send that crew `#<m> merged`" in prose("orchi/SKILL.md")
+    assert "marks #<n> as blocked by #<m> (`gh issue edit <n> --add-blocked-by <m>`)" in prose("orchi-core/references/pool.md")
+    assert "Issue is blocked by #<m> and #<m> has merged, send that crew `#<m> merged`" in prose("orchi/SKILL.md")
     assert "an unconfirmed one is a `blocker`" in prose("orchi-core/references/review-delivery.md")
     assert "report `#<n> waits for #<first run>`" in prose("orchi-design/SKILL.md")
     assert "for one outside the Initiative, report `#<n> waits for #<m>`" in deliver
@@ -161,9 +160,9 @@ def test_the_first_run_is_findable_and_acceptance_waits_for_its_harness():
     assert "its Issue says `First run of <product>.`" in planning and "`Builds wait for first run #<m>`" in planning
     assert "resume an open Issue that says `First run of`" in prose("orchi-plan/SKILL.md")
     for path in ("orchi-core/references/readiness.md", "orchi-core/roles/orchi-reviewer.md",
-                 "orchi-core/references/review-delivery.md", "orchi-core/assets/github/ISSUE_TEMPLATE/orchi-task.yml"):
+                 "orchi-core/references/review-delivery.md", "orchi-core/assets/issues/task.yml"):
         assert "until the acceptance harness lands" in prose(path), path
-    assert "planning adds an Issue labelled `needs-planning`" in prose("orchi-core/references/standards.md")
+    assert "planning adds an Issue without a plan" in prose("orchi-core/references/standards.md")
     deliver = prose("orchi-deliver/SKILL.md")
     assert "from a detached checkout of the PR head" in deliver and "stop it on `#<n> rework`" in deliver
     assert "answer it before its `done` with `#<task> answer`" in deliver

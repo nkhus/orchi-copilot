@@ -14,7 +14,7 @@ and no service runs besides the assistant.
 ## Instead
 
 Git branches and GitHub Issues are the only shared state: type labels, native
-sub-issues and `blocked by` dependencies, assignees, and `in-progress`. The
+sub-issues and `blocked by` dependencies, assignees, and linked branches and PRs. The
 bundled scripts only read, except `setup.py`, which prepares a repository. The
 role skills fix the order of steps for Orchi's sessions; their state is still
 only in Git and GitHub, and the app's session list only says which sessions

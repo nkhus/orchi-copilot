@@ -135,7 +135,7 @@ material change of direction with the user.
 Work that changes a user interface gets a design depth in its Epic or Task. The
 project's design engine, Hallmark or prototype, is the one `DESIGN.md` names;
 a new product picks it in its exploration's design session, and a project
-without either picks it in its first design Epic. The steps that
+without either picks it in its first Design Epic. The steps that
 need the user run in the session that talks to them, and writers build only
 against what the user approved.
 
@@ -143,36 +143,36 @@ against what the user approved.
 | --- | --- | --- |
 | None | The change stays within existing components and screens | Nothing more; a Task that is mainly UI goes to `orchi-designer`, which builds inside `DESIGN.md` with the engine's craft rules, and the review's design audit covers every UI range |
 | Brief | A new screen or feature inside an established visual world (`DESIGN.md` exists) | Ask the user whether to add references to `docs/design/references/`, agree the surface brief with them, and record it in `docs/design/surfaces/<surface>.md`; when the composition stays materially open, run a direction round (three variants from `orchi-designer` in Variant mode with the project's engine) and commit the chosen variant as the approved comp. Commit the brief on the work's branch, which planning creates now, and link it |
-| Epic | A new product, a redesign, or several screens whose composition is open | Plan a standalone `design` Epic (labels `Epic` and `design`) for a designer crew, outside any Initiative, and make each Epic that builds on it blocked by it |
+| Epic | A new product, a redesign, or several screens whose composition is open | Plan a standalone Design Epic (label `Epic`, its UI design section starting with `Design Epic:`) for a designer crew, outside any Initiative, and make each Epic that builds on it blocked by it |
 
-- A design Epic names the surfaces it designs, what must stay, and whether it
+- A Design Epic names the surfaces it designs, what must stay, and whether it
   replaces `DESIGN.md`. Its Tasks are the builds of the approved surfaces; the
   designer splits them after the user approves each comp, so plan them at
   outcome level.
-- From scratch, plan the key surfaces as one design Epic, and the rest now as an
+- From scratch, plan the key surfaces as one Design Epic, and the rest now as an
   Initiative from the Exploration's shape. When the exploration ran a design
-  session, the design Epic names its Design section as its source: the user
+  session, the Design Epic names its Design section as its source: the user
   has already approved the screen map, wireframes, references, engine, and
   mockup, so the Epic builds them on the stack and designs only the surfaces
   the session left out. An Epic that builds on the designed
-  surfaces is blocked by the design Epic and answers
-  its UI fields `Deferred until #<design Epic>`, resolved from `PRODUCT.md`,
+  surfaces is blocked by the Design Epic and answers
+  its UI fields `Deferred until #<Design Epic>`, resolved from `PRODUCT.md`,
   `DESIGN.md`, the surface briefs, and the built surfaces, which are kept. When
-  the rest is one Epic that builds on them, plan it instead as an Issue labelled
-  `needs-planning`, with `Requested by: Orchi`, blocked by the design
+  the rest is one Epic that builds on them, plan it instead as an Issue without a plan,
+  with `Requested by: @<the user's login>`, blocked by the Design
   Epic, for a planner once the design merges.
-- Without `PRODUCT.md`, the design Epic starts by writing it with the user; for
+- Without `PRODUCT.md`, the Design Epic starts by writing it with the user; for
   a redesign without `DESIGN.md`, by recording the incumbent look in it as
-  evidence. A design Epic without a design session behind it then agrees
+  evidence. A Design Epic without a design session behind it then agrees
   references with the user, and one without `DESIGN.md`, or one that replaces
   it, runs the engine round, in which the variant the user picks, from those
   both skills built, sets the project's engine.
 - Every Task that builds UI links the `DESIGN.md` sections, surface brief, and
   approved comp it builds against, and names its states, breakpoints, themes,
   and accessibility level. A brief that turns out to need a new world or a
-  redesign is raised to a design Epic, and the user is told why. A UI Task that
+  redesign is raised to a Design Epic, and the user is told why. A UI Task that
   reaches delivery without the brief its depth needs goes back to a planner as a
-  `needs-planning` follow-up.
+  follow-up Issue without a plan.
 - Only the user names references, chooses the engine and a direction, and
   approves a comp or a generated asset, or Orchi in autonomous mode. The session
   writing a brief answers the questions `PRODUCT.md`, `DESIGN.md`, or the Issues

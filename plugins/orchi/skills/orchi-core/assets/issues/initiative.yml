@@ -1,4 +1,4 @@
-name: Orchi Initiative
+name: Initiative
 description: A request decomposed into Epics on an initiative branch.
 title: "[TAG] "
 labels: [Initiative]
@@ -55,10 +55,3 @@ body:
       description: Link to the working folder's plan, docs/work/<tag>-<slug>/README.md, on the initiative/<tag>-<slug> branch.
     validations:
       required: true
-  - type: textarea
-    id: work
-    attributes:
-      label: Work reference
-      description: The claim while someone holds this - the assignee's session or identifier, the branch, and the PR; in a pool, Orchi's `Assigned to crew-<k> (<session id>) by <Orchi> on <date>` line.
-    validations:
-      required: false

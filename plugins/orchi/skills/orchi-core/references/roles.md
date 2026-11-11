@@ -25,7 +25,8 @@ needs no new contract, schema, migration, dependency, or design choice. Start
 Task that builds against a surface brief or an approved comp. Start
 `orchi-implementer` for every other Task, standalone or in an Epic. Start a
 writer with `task` in background mode, so that it stays available for more
-turns. A writer's report is a claim; inspect its diff and check output before
+turns. A Task's Suggested writer field names these as `fix`, `design`, and
+`implementation`. A writer's report is a claim; inspect its diff and check output before
 pushing.
 
 A fixer `ESCALATE` report names its cause:

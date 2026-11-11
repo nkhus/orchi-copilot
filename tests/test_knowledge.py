@@ -68,7 +68,7 @@ class KnowledgeTests(unittest.TestCase):
 
     def test_corpus_skips_installed_skills_and_honours_path_scope(self):
         for relative in ('.agents/skills/orchi-core/SKILL.md', '.github/agents/orchi-scout.agent.md',
-                         '.github/orchi/notes.md', 'node_modules/pkg/README.md', 'README.md'):
+                         'node_modules/pkg/README.md', 'README.md'):
             target = self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text('# Session\n[Broken](absent.md)\n')
@@ -76,7 +76,6 @@ class KnowledgeTests(unittest.TestCase):
         self.assertIn('README.md', docs.names)
         self.assertNotIn('.agents/skills/orchi-core/SKILL.md', docs.names)
         self.assertNotIn('.github/agents/orchi-scout.agent.md', docs.names)
-        self.assertNotIn('.github/orchi/notes.md', docs.names)
         self.assertNotIn('node_modules/pkg/README.md', docs.names)
         self.assertEqual(Documents(self.root, prefixes=['docs']).names, ['docs/README.md', 'docs/accounts.md'])
         self.assertEqual(lint(Documents(self.root, prefixes=['docs/'])), [])
@@ -112,7 +111,7 @@ class KnowledgeTests(unittest.TestCase):
         self.assertEqual(self.run_git('status', '--porcelain', '--untracked-files=all'), before)
 
     def test_vendored_scripts_run_from_the_repository_root(self):
-        vendored = self.root / '.github/orchi/scripts'
+        vendored = self.root / '.github/scripts'
         vendored.mkdir(parents=True)
         for name in ('knowledge.py', 'standards.py'):
             shutil.copy(SCRIPTS / name, vendored / name)
@@ -122,11 +121,11 @@ class KnowledgeTests(unittest.TestCase):
         def run(*args):
             return subprocess.run([sys.executable, *args], cwd=self.root, capture_output=True, text=True)
 
-        lint_run = run('.github/orchi/scripts/knowledge.py', 'lint', '--since', 'HEAD')
+        lint_run = run('.github/scripts/knowledge.py', 'lint', '--since', 'HEAD')
         self.assertEqual(lint_run.returncode, 0, lint_run.stderr)
         self.assertIn('2 files, 0 errors', lint_run.stdout)
-        self.assertEqual(run('.github/orchi/scripts/knowledge.py', 'work').returncode, 0)
-        self.assertIn('No ENGINEERING.md', run('.github/orchi/scripts/standards.py', 'check').stdout)
+        self.assertEqual(run('.github/scripts/knowledge.py', 'work').returncode, 0)
+        self.assertIn('No ENGINEERING.md', run('.github/scripts/standards.py', 'check').stdout)
 
 
 if __name__ == '__main__':

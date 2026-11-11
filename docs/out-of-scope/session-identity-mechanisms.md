@@ -6,7 +6,7 @@ starts.
 
 ## Why
 
-The maintainer declined these in favor of re-sending. The claim, Issue, and PR
+The maintainer declined these in favor of re-sending. The assignment, Issue, and PR
 already record what a crew holds, so one message restores the role, while each
 mechanism would add configuration that also runs in sessions that are not
 Orchi's crews.
