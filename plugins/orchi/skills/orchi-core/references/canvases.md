@@ -12,10 +12,12 @@ status and open questions, and a crew's page shows all its questions to answer a
 the Orchi Summary closes the tab. **Board** is a kanban on three levels (Initiatives, an Initiative's Epics, an Epic's
 Tasks, and Outside Initiatives for Issues and PRs with none) in six columns: Needs planning, Backlog, In progress,
 Questions for you, Your review, and Done. A Task's page shows what the user decides there. The board reads GitHub
-through `scripts/board.py` every five minutes and on Refresh: the backlog, PRs, assignees and linked branches, and the question and answer
-comments of the pool's [Questions and plans](pool.md#questions-and-plans). It adds what only Orchi knows from its
-`update_pool` reports, and writes nothing to GitHub. Orchi moves cards by changing the real state; the user's moves
-and answers on the board are requests to Orchi.
+through `scripts/board.py` every five minutes and on Refresh: the backlog, sub-issues, assignees, linked branches,
+native blocked-by relationships, PRs with their reviews and checks, and the Deferred and Held comments below. Anyone
+with read access to the repository builds the same work view from GitHub alone; it is read-only and shows no crews,
+questions, or Summary. The board becomes the owner's, with actions, once Orchi reports to it with `update_pool` in
+this conversation; those reports stay in the app and never reach GitHub. Orchi moves cards by changing the real state;
+the user's moves and answers on the board are requests to Orchi.
 
 1. **Open it** at the start of Orchi's conversation, and whenever the user asks for it: `open_canvas` with canvasId
    `orchi-board`, instanceId `orchi-board`, and input `{"repo": "<owner>/<name>"}`. Opening the same instanceId again
@@ -26,19 +28,17 @@ and answers on the board are requests to Orchi.
      `doing` in a few plain words, `question`, `background`, `since`, `stuck`, `runs`, `pr`, and `branch`. A crew's
      `state` is `waiting` while it needs the user's input, `stuck` as the pool's Stalls section says, `working` while
      it runs, `idle` when it holds work but runs nothing, and `free` when it holds none.
-   - `questions`: every open question with its `id`. Add `request_id` while the crew waits on `ask_user` or a plan,
-     and the other fields (`crew`, `issue`, `kind`, `blocking`, `assumed`, `text`, `context`, `choices`, `plan`,
-     `links`, `asked`) for a question no comment holds yet, such as a tool approval or a crew's `ask_user`. The
-     board joins them by `id` with the question comments.
+   - `questions`: every open question you keep for the user, with `id`, `crew`, `issue`, `kind` (`question`, `plan`,
+     `design`, `permission`, `merge`), `blocking`, `assumed`, `text`, `context`, `choices` (`label`, `detail`,
+     `recommended`), `plan`, `links`, and `asked`, and `request_id` while the crew waits on `ask_user` or a plan.
    - `summary`: your answer to "How are things going?" as `paragraphs` (each a bold `lead` sentence and its `text`),
      `since` (one line on what merged, was answered, or closed today), and `at`. In a few short paragraphs, say what
      moved forward, what is in progress, what is stuck and why, problems or risks, what waits for the user and what it
      unblocks, and what comes next. Write calm, concrete prose; name Issues and PRs as `#<n>` and crews by name (the
      board links both); when nothing is stuck or at risk, say so plainly instead of leaving it out.
-   - `mode`, `limit`, `merges` (PRs waiting for the user's yes), `deferred`, `held`, and `queue` (`issue`, `action`,
-     `title`: work that starts when a crew is free).
-   - `stages` (number → column) only where GitHub does not show where the work is yet, and `moves` (`number`, `to`,
-     `note`, `back` when it came back from the user's review) for a card's history.
+   - `mode` and `limit`, and `queue`: the Issues a planner keeps queued, in order (`issue`, `action` `take` or `plan`,
+     `title`, and `after`, the Issue it waits for). The board adds planned work nobody holds after them, and reads
+     everything else (columns, history, PRs waiting for a merge, deferred and held work) from GitHub.
 3. **Take its requests.** A message that ends with `(Sent from the Orchi board ...)` is the user's own request for that
    one action, confirmed on the board after a five-second Undo. Check the current state first (the Issue, the PR, the
    crew's status, the question's `request_id`); when it no longer fits, say why in one line and do nothing. Otherwise
@@ -56,15 +56,16 @@ and answers on the board are requests to Orchi.
 | `Answer the question of <crew>: <text>` | Answers that crew's open question with the text: `answer_session_input` with its exact `request_id` when it waits on `ask_user`, otherwise a message to the crew |
 | `About your question <id>: <text>` | Takes the text as the user's answer to its own question `<id>` |
 | `Merge PR #<n>.` | The user's yes to merge it; every other merge check still applies |
-| `Hold PR #<n> ...` | Comments `Held at the user's request on <date>` on the PR, adds it to `held`, and merges it only when the user says so |
+| `Hold PR #<n> ...` | Comments `Held at the user's request on <date>` on the PR and merges it only when the user says so |
 | `Take #<n>.` or `Take #<n> when a crew is free.` | Assigns a crew, now or within the pool's limits |
 | `Plan #<n>.` | Assigns a planner crew |
-| `Defer #<n> ...` / `Resume #<n>.` | Comments `Deferred at the user's request on <date>` or `Resumed at the user's request on <date>` on the Issue, updates `deferred`, and starts no work on a deferred Issue |
+| `Defer #<n> ...` / `Resume #<n>.` | Comments `Deferred at the user's request on <date>` or `Resumed at the user's request on <date>` on the Issue, and starts no work on a deferred Issue |
 | `Ask <crew> for its status and tell me.` | Sends `<id> status?` and passes the answer on |
 | `Turn autonomous mode <on or off>.` | Changes the mode as the pool's Autonomous mode section says |
 
-After a restart, rebuild `deferred` and `held` from those comments: an Issue is deferred while its latest such comment
-says Deferred, and a PR is held until the user says to merge it. The open questions come back from their comments.
+An Issue is deferred while its latest such comment says Deferred, and a PR is held until the user says to merge it;
+the board reads both from GitHub, so they survive a restart. Open questions live in Orchi's conversation and its
+`update_pool` reports: after a restart, rebuild them from `get_sessions_status` and the crews' unanswered reports.
 
 ## The design board
 

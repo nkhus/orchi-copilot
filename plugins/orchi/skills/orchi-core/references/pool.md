@@ -209,17 +209,13 @@ work waits for an Issue it does not hold marks #<n> as blocked by #<m> (`gh issu
 
 A crew stops to ask only when its work cannot go on without the answer: a session waiting on `ask_user` holds one
 question and does nothing else. When the work can go on, the crew picks the answer it would take, reports
-`<id> needs the user: <question>, going with <answer>` with the options in a comment the message names, and keeps
-working; it changes course when the answer differs. A crew may have several such questions open.
+`<id> needs the user: <question>, going with <answer>` with the options and their consequences in the message, and
+keeps working; it changes course when the answer differs. A crew may have several such questions open.
 
-Orchi keeps every open question for the user, so that a series survives restarts and the board can show it. It writes
-each as a comment on the Issue or PR it is about: the question in plain words for people, ending with
-`<!-- orchi:question {...} -->` holding `id`, `crew`, `kind` (`question`, `plan`, `design`, `permission`, `merge`),
-`blocking`, `assumed` (the going-with answer), `text`, `context` (a few lines the user needs), `choices`
-(`label`, `detail` with its consequence, `recommended`), and `plan` (a plan's Tasks). Once the user has answered, it
-comments `<!-- orchi:answer {"id": "<id>", "answer": "<answer>"} -->` on the same Issue or PR. The open questions are
-the question comments with no answer comment; a crew's `ask_user` and a `pending_plan` are open while
-`get_sessions_status` shows them. Orchi reports them all to the board as [canvases](canvases.md#the-orchi-board) says.
+Orchi keeps every open question for the user in its conversation, never in Issues or PRs: a crew's reported question
+is open until the user answers it, and a crew's `ask_user` and a `pending_plan` are open while `get_sessions_status`
+shows them. Orchi reports them all to the board as [canvases](canvases.md#the-orchi-board) says. After a restart, it
+rebuilds them from `get_sessions_status` and the crews' reports that no answer followed.
 
 An answer the user gives in Orchi's conversation or on the board goes through Orchi. Orchi first checks that the
 question is still open; when it is not, it says so in one line. Otherwise it answers a crew waiting on `ask_user` with

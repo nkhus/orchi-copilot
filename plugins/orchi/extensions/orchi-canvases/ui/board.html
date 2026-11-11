@@ -69,7 +69,7 @@ details summary{cursor:pointer}
 </head>
 <body>
 <header>
-  <div class="top"><h1 id="repo">Orchi board</h1><span id="updated" class="muted" style="font-size:12px"></span><button id="refresh" class="small">Refresh</button></div>
+  <div class="top"><h1 id="repo">Orchi board</h1><span id="updated" class="muted" style="font-size:12px"></span><span id="readonly" class="muted" style="font-size:12px" hidden>Read-only · actions happen on the owner's board</span><button id="refresh" class="small">Refresh</button></div>
   <nav class="tabs"><a id="tab-crews" href="#crews">Crews</a><a id="tab-board" href="#board">Board</a></nav>
 </header>
 <div id="error" class="error" hidden></div>
@@ -77,8 +77,8 @@ details summary{cursor:pointer}
 <div id="bar"></div>
 <script>
 "use strict";
-// The board is a view: GitHub state and what Orchi reported. A button or a drop becomes a request to Orchi, sent
-// after a 5 s window in which the user can undo it.
+// The board is a view: GitHub state and, on the owner's board, what Orchi reported. There a button or a drop becomes
+// a request to Orchi, sent after a 5 s window in which the user can undo it; everywhere else the board is read-only.
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const plural = (n, word, many = word + "s") => `${n} ${n === 1 ? word : many}`;
@@ -115,6 +115,7 @@ const link = (...parts) => "#" + parts.map((part) => encodeURIComponent(String(p
 // ── data ──
 const columns = () => snap?.board?.columns?.length ? snap.board.columns : DEFAULT_COLUMNS;
 const columnTitle = (key) => (columns().find((column) => column.key === key) || {}).title || key;
+const owner = () => snap?.owner === true;
 const crews = () => snap?.crews || [];
 const questions = () => (snap?.questions || []).filter((question) => !hidden.has(question.id));
 const questionsOf = (name) => questions().filter((question) => question.crew === name);
@@ -217,12 +218,18 @@ function prose(text) {
 function summaryBlock() {
   const summary = snap?.summary || {};
   const paragraphs = (summary.paragraphs || []).filter((item) => item && (item.lead || item.text));
-  const head = `<div class="hd"><b>Summary</b><span>${summary.at ? "by Orchi · " + hm(summary.at) : "by Orchi"}</span><button class="small" data-summary>Refresh</button></div>`;
-  if (!paragraphs.length) return `<div class="syn">${head}<div class="muted" style="font-size:13px">Orchi writes the summary here when it reports the pool.</div></div>`;
+  const by = ["by Orchi", summary.at && hm(summary.at)].filter(Boolean).join(" · ");
+  const head = `<div class="hd"><b>Summary</b><span>${by}</span><button class="small" data-summary>Refresh</button></div>`;
+  if (!paragraphs.length) return `<div class="syn">${head}<div class="muted" style="font-size:13px">No summary yet: Refresh asks Orchi for one.</div></div>`;
   return `<div class="syn">${head}` + paragraphs.map((item) => `<p>${item.lead ? `<b>${prose(item.lead)}</b> ` : ""}${prose(item.text || "")}</p>`).join("") +
     (summary.since ? `<p class="muted" style="font-size:13px">${prose(summary.since)}</p>` : "") + `</div>`;
 }
 function crewList() {
+  if (!owner()) {
+    const ready = (snap?.queue || []).map((item) => `#${item.issue} ${esc(item.title || titleOf(item.issue))}`);
+    return `<div class="sum">Crews and the Summary are on the owner's board.</div><div class="foot">This board shows the work as ` +
+      `GitHub has it, on the Board tab.${ready.length ? ` Ready to start: ${ready.join(", ")}.` : ""}</div>`;
+  }
   const list = [orchiRow(), ...crews()].sort((a, b) => CREW_ORDER.indexOf(a.state) - CREW_ORDER.indexOf(b.state));
   const asking = list.filter((crew) => questionsOf(crew.name).length).length;
   const stuck = crews().filter((crew) => crew.state === "stuck").length;
@@ -251,10 +258,11 @@ function crewPage(name) {
   const path = [...(crew.path || []).map(ref), ref(crew.issue)].filter(Boolean).join(" › ");
   const pull = crew.pr && pullOf(crew.pr);
   const meta = [path, crew.pr ? `PR #${crew.pr}${pull ? " · checks " + pull.checks : ""}` : "", crew.branch, crew.runs].filter(Boolean).map(esc);
-  if (!crew.orchi) meta.push(`<a data-open="${esc(crew.name)}">Open session ↗</a>`);
+  if (!crew.orchi && owner()) meta.push(`<a data-open="${esc(crew.name)}">Open session ↗</a>`);
   let html = `<span class="back" data-go="#crews">← Crews</span><div class="crh"><h2>${esc(crew.name)}</h2><span class="meta">${esc(crew.role || "")}</span>` +
     `<span class="c-${tone}" style="color:var(--c);font-size:13px">● ${label}${crew.since ? " · " + esc(ago(crew.since)) : ""}</span></div>` +
     `<div class="meta" style="margin-top:4px">${esc(doing(crew))}</div><div class="meta" style="margin-top:2px">${meta.join(" · ")}</div>`;
+  if (!owner()) return html;
   const list = questionsOf(crew.name);
   html += list.length ? `<div class="sec">Open questions · ${list.length}</div>` + list.map((question) => `<div class="qc ${question.blocking ? "blk" : ""}">${questionCard(question)}</div>`).join("")
     : `<div class="sec">Questions</div><div class="muted">No open questions.</div>`;
@@ -335,7 +343,7 @@ function scoped(cards) {
 function kanban(items, render, droppable) {
   return `<div class="kb">` + columns().map((column) => {
     const inside = items.filter((item) => item.stage === column.key);
-    return `<div class="cp ${column.you && inside.length ? "you" : ""}" data-col="${column.key}" ${droppable ? "data-drop" : ""}><div class="ch">${esc(column.title)}<span class="n">${inside.length}</span></div>${inside.map(render).join("")}</div>`;
+    return `<div class="cp ${column.you && inside.length ? "you" : ""}" data-col="${column.key}" ${droppable && owner() ? "data-drop" : ""}><div class="ch">${esc(column.title)}<span class="n">${inside.length}</span></div>${inside.map(render).join("")}</div>`;
   }).join("") + `</div>`;
 }
 function bigCard(item) {
@@ -348,7 +356,7 @@ function bigCard(item) {
 function taskCard(card) {
   const epic = groupOf(card.group)?.kind === "Initiative" && card.epic ? card.epic : "-";
   const state = card.requested ? "requested…" : card.state;
-  return `<div class="k c-${card.tone}${flash === card.number ? " flash" : ""}" ${card.kind === "PR" ? "" : 'draggable="true"'} data-card="${card.number}" data-go="${esc(link("board", card.group, epic, card.number))}">` +
+  return `<div class="k c-${card.tone}${flash === card.number ? " flash" : ""}" ${card.kind === "PR" || !owner() ? "" : 'draggable="true"'} data-card="${card.number}" data-go="${esc(link("board", card.group, epic, card.number))}">` +
     `<div class="t">${esc(card.title)}</div><div class="b"><span class="id">#${card.number}</span><b class="dot"></b><span>${esc(state)}</span>${card.back ? '<span class="ic" title="Back from your review">↩</span>' : ""}</div></div>`;
 }
 function groupOf(key) { return (snap?.board?.groups || []).find((group) => group.key === key); }
@@ -404,10 +412,19 @@ function historyBlock(card) {
     return `<div><span class="tm">${esc(hm(entry.at))}</span><span class="${entry.back ? "b" : ""}">${esc(text)}</span></div>`;
   }).join("") + `</div></details>`;
 }
+function github(card) {
+  const pull = card.pull;
+  const links = [card.kind !== "PR" && card.url && `<a href="${esc(card.url)}" target="_blank" rel="noopener">Open #${card.number} on GitHub ↗</a>`,
+    pull?.url && `<a href="${esc(pull.url)}" target="_blank" rel="noopener">Open PR #${pull.number} on GitHub ↗</a>`].filter(Boolean);
+  const pr = pull && (card.detail === "pr" || card.stage === "review") ? `<div class="sec">What changed</div>` + (pull.changes?.length ? `<ul class="l">${pull.changes.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>` : `<div class="muted">${esc(pull.title)}</div>`) + checks(pull) : "";
+  return (pr || `<div class="box c-${card.tone}"><b class="dot"></b>${esc(card.state)}</div>`) + historyBlock(card) +
+    `<div class="acts">${links.join("")}<span class="muted">Read-only: actions happen on the owner's board.</span></div>`;
+}
 function taskPage(card) {
-  const crew = card.crew ? `<b>${esc(card.crew)}</b> · <a data-open="${esc(card.crew)}">Open session ↗</a>` : "no crew yet";
+  const crew = card.crew ? `<b>${esc(card.crew)}</b>` + (owner() ? ` · <a data-open="${esc(card.crew)}">Open session ↗</a>` : "") : "no crew yet";
   let html = `<div class="dw"><div class="dh"><h2>${esc(card.title)}</h2><a class="muted" href="${esc(card.url || "")}" target="_blank" rel="noopener">#${card.number} ↗</a></div>` +
     `<div class="meta">${card.kind} · ${crew}</div><div class="path">${columns().map((column) => `<span class="${column.key === card.stage ? "on" : ""}">${esc(column.title)}</span>`).join("")}</div>`;
+  if (!owner()) return html + github(card) + "</div>";
   const asked = (card.questions || []).map(questionById).filter(Boolean);
   const question = asked.find((item) => item.kind === card.detail) || asked[0];
   const pull = card.pull;
@@ -458,6 +475,7 @@ function draw() {
 }
 function header() {
   $("repo").textContent = data?.repository || "Orchi board";
+  $("readonly").hidden = !snap || owner();
   $("updated").textContent = data?.refreshing ? "refreshing…" : snap?.updated ? `updated ${ago(snap.updated) === "0 min" ? "just now" : ago(snap.updated) + " ago"}` : "";
   const error = data?.error || snap?.error;
   $("error").hidden = !error;
