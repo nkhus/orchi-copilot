@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orchi board</title>
+<style>
+:root {
+    --status-bar-color: var(--background-color-default, #ffffff);
+    --fg: var(--text-color-default, #1f2328);
+    --muted: var(--text-color-muted, #59636e);
+    --line: var(--border-color-default, #d1d9e0);
+    --bg: var(--background-color-default, #ffffff);
+    --red: var(--true-color-red, #cf222e);
+    --red-soft: var(--true-color-red-muted, #ffebe9);
+    --orange: var(--true-color-orange, #bc4c00);
+    --orange-soft: var(--true-color-orange-muted, #fff1e5);
+    --blue: var(--true-color-blue, #0969da);
+    --blue-soft: var(--true-color-blue-muted, #ddf4ff);
+    --green: var(--true-color-green, #1a7f37);
+    --green-soft: var(--true-color-green-muted, #dafbe1);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: var(--text-body-medium, 14px); line-height: var(--leading-body-medium, 20px);
+}
+header { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line);
+    padding: 10px 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+header h1 { font-size: var(--text-title-small, 16px); font-weight: var(--font-weight-semibold, 600); margin: 0; flex: 1 1 auto; }
+.muted { color: var(--muted); }
+.small { font-size: var(--text-body-small, 12px); }
+button { font: inherit; color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 6px;
+    padding: 2px 10px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button:focus-visible, textarea:focus-visible { outline: 2px solid var(--color-focus-outline, var(--blue)); outline-offset: 1px; }
+button.primary { background: var(--blue); border-color: var(--blue); color: var(--color-white, #fff); }
+button:disabled { opacity: .5; cursor: default; }
+main { padding: 12px 16px 80px; max-width: 1100px; }
+section { margin-bottom: 20px; }
+h2 { font-size: var(--text-body-medium, 14px); font-weight: var(--font-weight-semibold, 600); margin: 0 0 8px; }
+.banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; background: var(--red-soft); color: var(--red); }
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.card.wait { background: var(--orange-soft); border-color: transparent; }
+.row { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.pill { display: inline-block; border-radius: 999px; padding: 0 8px; font-size: var(--text-body-small, 12px);
+    border: 1px solid var(--line); white-space: nowrap; }
+.s-stuck { background: var(--red-soft); color: var(--red); border-color: transparent; }
+.s-waiting { background: var(--orange-soft); color: var(--orange); border-color: transparent; }
+.s-working { background: var(--blue-soft); color: var(--blue); border-color: transparent; }
+.s-background { background: var(--blue-soft); color: var(--blue); border-color: transparent; opacity: .8; }
+.s-passing, .s-on { background: var(--green-soft); color: var(--green); border-color: transparent; }
+.s-failing { background: var(--red-soft); color: var(--red); border-color: transparent; }
+.s-pending { background: var(--orange-soft); color: var(--orange); border-color: transparent; }
+.tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 6px 10px; }
+.tabs button[aria-selected="true"] { border-bottom-color: var(--blue); font-weight: var(--font-weight-semibold, 600); }
+.bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; width: 80px; display: inline-block; vertical-align: middle; }
+.bar > i { display: block; height: 100%; background: var(--green); }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul.tree { list-style: none; margin: 0; padding: 0; }
+ul.tree ul { list-style: none; margin: 0; padding-left: 18px; border-left: 1px solid var(--line); }
+ul.tree li { padding: 3px 0; }
+.actions { display: inline-flex; gap: 4px; }
+textarea { width: 100%; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 8px; margin-top: 6px; resize: vertical; min-height: 54px; }
+#confirm { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line);
+    padding: 10px 16px; display: none; gap: 10px; align-items: center; z-index: 3; }
+#confirm.open { display: flex; }
+#confirm .text { flex: 1 1 auto; white-space: pre-wrap; }
+.empty { color: var(--muted); padding: 6px 0; }
+</style>
+</head>
+<body>
+<header>
+    <h1 id="title">Orchi board</h1>
+    <span id="mode" class="pill" hidden></span>
+    <button id="mode-toggle" hidden></button>
+    <span id="updated" class="muted small"></span>
+    <button id="refresh" title="Read GitHub again">Refresh</button>
+</header>
+<main>
+    <div id="error" class="banner" hidden></div>
+    <section>
+        <h2>Waiting for you</h2>
+        <div id="waiting"></div>
+    </section>
+    <div class="tabs" role="tablist">
+        <button role="tab" id="tab-crews" aria-selected="true">Crews</button>
+        <button role="tab" id="tab-backlog" aria-selected="false">Backlog</button>
+    </div>
+    <div id="crews"></div>
+    <div id="backlog" hidden></div>
+</main>
+<div id="confirm" role="dialog" aria-live="polite">
+    <span class="text"></span>
+    <button class="primary" id="send">Send to Orchi</button>
+    <button id="cancel">Cancel</button>
+</div>
+<script>
+"use strict";
+let data = null;
+let pending = null;
+const $ = (id) => document.getElementById(id);
+
+function h(tag, props, ...children) {
+    const node = document.createElement(tag);
+    for (const [key, value] of Object.entries(props || {})) {
+        if (value === undefined || value === null || value === false) continue;
+        if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+        else if (key === "class") node.className = value;
+        else node.setAttribute(key, value === true ? "" : value);
+    }
+    for (const child of children.flat()) if (child !== null && child !== undefined && child !== false)
+        node.append(child instanceof Node ? child : String(child));
+    return node;
+}
+
+const link = (url, text) => url ? h("a", { href: url, target: "_blank", rel: "noopener" }, text) : text;
+const ago = (iso) => {
+    const time = Date.parse(iso || "");
+    if (!time) return "";
+    const minutes = Math.round((Date.now() - time) / 60000);
+    return minutes < 1 ? "just now" : minutes < 60 ? `${minutes} min ago` :
+        minutes < 1440 ? `${Math.round(minutes / 60)} h ago` : `${Math.round(minutes / 1440)} d ago`;
+};
+const bar = (progress) => progress && progress.total ? h("span", { class: "small muted" },
+    h("span", { class: "bar" }, h("i", { style: `width:${Math.round(100 * progress.done / progress.total)}%` })),
+    ` ${progress.done}/${progress.total}`) : null;
+
+function ask(text, body) {
+    pending = body;
+    $("confirm").querySelector(".text").textContent = "Send to Orchi: " + text;
+    $("confirm").classList.add("open");
+    $("send").disabled = false;
+    $("send").focus();
+}
+
+async function post(path, body) {
+    const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}) });
+    const reply = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(reply.error || response.statusText);
+    return reply;
+}
+
+$("send").onclick = async () => {
+    if (!pending) return;
+    $("send").disabled = true;
+    try {
+        await post("request", pending);
+        $("confirm").querySelector(".text").textContent = "Sent. Orchi answers in the conversation.";
+        pending = null;
+        setTimeout(() => $("confirm").classList.remove("open"), 2500);
+    } catch (error) {
+        $("confirm").querySelector(".text").textContent = "Not sent: " + error.message;
+        $("send").disabled = false;
+    }
+};
+$("cancel").onclick = () => { pending = null; $("confirm").classList.remove("open"); };
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") $("cancel").click(); });
+$("refresh").onclick = async () => { $("updated").textContent = "refreshing…"; await post("refresh").catch(() => {}); };
+for (const name of ["crews", "backlog"]) $("tab-" + name).onclick = () => {
+    for (const other of ["crews", "backlog"]) {
+        $("tab-" + other).setAttribute("aria-selected", String(other === name));
+        $(other).hidden = other !== name;
+    }
+};
+
+function answerBox(label, build) {
+    const box = h("textarea", { "aria-label": label, placeholder: label });
+    return [box, h("div", { class: "row" }, h("button", { onclick: () => {
+        const text = box.value.trim();
+        if (text) ask(...build(text));
+    } }, "Answer…"))];
+}
+
+function renderWaiting(snapshot) {
+    const items = snapshot?.waiting || [];
+    const list = items.map((item) => {
+        if (item.kind === "merge") return h("div", { class: "card wait" }, h("div", { class: "row" },
+            h("span", { class: "grow" }, "Merge ", link(pullUrl(item.pull), `PR #${item.pull}`), " · ", item.text),
+            h("span", { class: "actions" },
+                h("button", { onclick: () => ask(`Merge PR #${item.pull}.`, { action: "merge", pull: item.pull }) }, "Merge…"),
+                h("button", { onclick: () => ask(`Hold PR #${item.pull}.`, { action: "hold", pull: item.pull }) }, "Hold…"))));
+        if (item.kind === "question") return h("div", { class: "card wait" },
+            h("div", null, h("strong", null, item.crew), item.issue ? h("span", { class: "muted" }, ` · #${item.issue}`) : null),
+            h("div", null, item.text || h("span", { class: "muted" }, "Asks for your input in its session.")),
+            answerBox("Your answer", (text) => [`Answer ${item.crew}: ${text}`, { action: "answer", crew: item.crew, text }]));
+        return h("div", { class: "card wait" }, h("div", null, h("strong", null, "Orchi"), " asks"),
+            h("div", null, item.text),
+            answerBox("Your reply", (text) => [`About ${item.id}: ${text}`, { action: "reply", id: item.id, text }]));
+    });
+    $("waiting").replaceChildren(...(list.length ? list : [h("div", { class: "empty" }, "Nothing waits for you.")]));
+}
+
+function pullUrl(number) {
+    return (data?.snapshot?.pulls || []).find((pull) => pull.number === number)?.url ||
+        `https://github.com/${data?.repository}/pull/${number}`;
+}
+
+function workTitle(number) {
+    const all = [...(data?.snapshot?.work || []), ...(data?.snapshot?.planning || [])];
+    return all.find((entry) => entry.number === number)?.title;
+}
+
+function renderCrews(snapshot) {
+    const crews = snapshot?.crews || [];
+    if (!crews.length) {
+        $("crews").replaceChildren(h("div", { class: "empty" },
+            snapshot?.reported ? "No crews in the pool." : "Orchi has not reported the pool yet."));
+        return;
+    }
+    $("crews").replaceChildren(...crews.map((crew) => h("div", { class: "card" },
+        h("div", { class: "row" },
+            h("span", { class: `pill s-${crew.state}` }, crew.state),
+            h("strong", { class: "grow" }, crew.name),
+            crew.since ? h("span", { class: "small muted" }, ago(crew.since)) : null,
+            h("button", { onclick: () => ask(`Ask ${crew.name} for its status.`, { action: "status", crew: crew.name }) }, "Status…")),
+        crew.stuck ? h("div", { class: "small", style: "color:var(--red)" }, crew.stuck) : null,
+        crew.doing ? h("div", null, crew.doing) : null,
+        crew.background ? h("div", { class: "small muted" }, "Background: ", crew.background) : null,
+        crew.issue ? h("div", { class: "small muted" },
+            (crew.path || []).map((number) => [link(`https://github.com/${data.repository}/issues/${number}`, `#${number}`),
+                ` ${workTitle(number) || ""} › `]),
+            link(crew.url, `#${crew.issue}`), " ", crew.title || "", " ", bar(crew.progress)) : null,
+        crew.state === "waiting" && crew.question ? h("div", { class: "small" }, "Asks: ", crew.question) : null)));
+}
+
+function renderBacklog(snapshot) {
+    if (!snapshot) return $("backlog").replaceChildren();
+    const work = snapshot.work || [];
+    const deferred = new Set(snapshot.deferred || []);
+    const busy = (snapshot.crews || []).filter((crew) => crew.issue && crew.state !== "free").length;
+    const full = snapshot.limit && busy >= snapshot.limit;
+    const children = (parent) => work.filter((entry) => (entry.parent || null) === parent);
+    const pullsFor = (number) => (snapshot.pulls || []).filter((pull) => pull.closes.includes(number));
+    const node = (entry) => {
+        const free = !entry.crew && entry.kind !== "Initiative";
+        const buttons = [];
+        if (deferred.has(entry.number)) buttons.push(h("button", { onclick: () =>
+            ask(`Resume #${entry.number}.`, { action: "resume", issue: entry.number }) }, "Resume…"));
+        else if (free && ["ready", "todo"].includes(entry.status)) {
+            buttons.push(h("button", { onclick: () => ask(full ? `Take #${entry.number} when a crew is free.` :
+                `Take #${entry.number}.`, { action: "take", issue: entry.number, queue: !!full }) }, full ? "Queue…" : "Take…"));
+            buttons.push(h("button", { onclick: () =>
+                ask(`Defer #${entry.number}.`, { action: "defer", issue: entry.number }) }, "Defer…"));
+        }
+        const kids = children(entry.number);
+        return h("li", null, h("div", { class: "row" },
+            h("span", { class: "pill" }, entry.kind),
+            h("span", { class: "grow" }, link(entry.url, `#${entry.number}`), " ", entry.title,
+                deferred.has(entry.number) ? h("span", { class: "muted" }, " · deferred") : null,
+                entry.crew ? h("span", { class: "muted small" }, " · ", entry.crew) : null,
+                entry.waits_for ? h("span", { class: "muted small" }, ` · waits for #${entry.waits_for}`) : null),
+            h("span", { class: "small muted" }, entry.status), bar(entry.progress),
+            h("span", { class: "actions" }, buttons)),
+            pullsFor(entry.number).map((pull) => h("div", { class: "small row", style: "padding-left:18px" },
+                link(pull.url, `PR #${pull.number}`), pull.draft ? h("span", { class: "muted" }, "draft") : null,
+                h("span", { class: `pill s-${pull.checks}` }, `checks ${pull.checks}`),
+                pull.review ? h("span", { class: "muted" }, pull.review.toLowerCase().replace(/_/g, " ")) : null)),
+            kids.length ? h("ul", null, kids.map(node)) : null);
+    };
+    const roots = work.filter((entry) => !entry.parent || !work.some((other) => other.number === entry.parent));
+    const planning = snapshot.planning || [];
+    const merged = snapshot.merged || [];
+    $("backlog").replaceChildren(
+        h("section", null, h("h2", null, "Work", snapshot.limit ? h("span", { class: "muted small" },
+            ` · ${busy} of ${snapshot.limit} crews hold work`) : null),
+            roots.length ? h("ul", { class: "tree" }, roots.map(node)) : h("div", { class: "empty" }, "No open tracked work.")),
+        h("section", null, h("h2", null, "To plan"), planning.length ? h("ul", { class: "tree" }, planning.map((entry) =>
+            h("li", null, h("div", { class: "row" }, h("span", { class: "pill" }, entry.kind),
+                h("span", { class: "grow" }, link(entry.url, `#${entry.number}`), " ", entry.title,
+                    entry.crew ? h("span", { class: "muted small" }, " · ", entry.crew) : null),
+                entry.crew ? null : h("button", { onclick: () =>
+                    ask(`Plan #${entry.number}.`, { action: "plan", issue: entry.number }) }, "Plan…")))))
+            : h("div", { class: "empty" }, "Nothing waits for planning.")),
+        h("section", null, h("h2", null, "Recently merged"), merged.length ? h("ul", { class: "tree" }, merged.map((pull) =>
+            h("li", { class: "small" }, link(pull.url, `PR #${pull.number}`), " ", pull.title,
+                h("span", { class: "muted" }, ` · into ${pull.base} · ${ago(pull.merged_at)}`))))
+            : h("div", { class: "empty" }, "No merges yet.")));
+}
+
+function render() {
+    if (!data) return;
+    const snapshot = data.snapshot;
+    $("title").textContent = `Orchi board · ${data.repository}`;
+    $("error").hidden = !data.error;
+    $("error").textContent = data.error ? `Refresh failed; showing the last good view. ${data.error}` : "";
+    $("updated").textContent = data.refreshing ? "refreshing…" : snapshot ? `updated ${ago(snapshot.updated)}` : "";
+    const mode = snapshot?.mode;
+    $("mode").hidden = !mode;
+    $("mode").className = `pill s-${mode}`;
+    $("mode").textContent = `autonomous ${mode}`;
+    $("mode-toggle").hidden = !mode;
+    const to = mode === "on" ? "off" : "on";
+    $("mode-toggle").textContent = `Turn ${to}…`;
+    $("mode-toggle").onclick = () => ask(`Turn autonomous mode ${to}.`, { action: "mode", to });
+    renderWaiting(snapshot);
+    renderCrews(snapshot);
+    renderBacklog(snapshot);
+}
+
+async function load() {
+    try {
+        const response = await fetch("state");
+        data = await response.json();
+        render();
+    } catch (error) {
+        $("error").hidden = false;
+        $("error").textContent = "The board lost its extension: " + error.message;
+    }
+}
+
+const events = new EventSource("events");
+events.onmessage = load;
+setInterval(() => data && render(), 60000);
+load();
+</script>
+</body>
+</html>
