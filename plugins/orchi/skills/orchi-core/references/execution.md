@@ -50,7 +50,7 @@ and scoped instructions. Check that the actual branch matches the issue.
 
 Implement Tasks in sequence on the Epic branch; Tasks have no PR of their own. A
 pool dev lead's Tasks on different files run in parallel on `task/<slug>`
-branches that merge into the Epic branch ([pool](pool.md#workers)). Assign yourself to the current Task. Update code, tests, and owning
+branches that merge into the Epic branch ([pool](pool.md#writers)). Assign yourself to the current Task. Update code, tests, and owning
 documentation together, writing tests per [testing](testing.md). Run the checks
 that establish the Task's acceptance and record the result, the red evidence,
 and the commit in the shared PR. A failing check is unresolved

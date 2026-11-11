@@ -1,6 +1,6 @@
 ---
 name: orchi-plan
-description: Turn a user request into agreed, tracked, ready-to-deliver Orchi work (standalone Task, Epic, or Initiative). Invoke only when an Orchi pool assignment asks for orchi-plan by name, or orchi-explore continues into it.
+description: Turn a user request into agreed, tracked, ready-to-deliver Orchi work (standalone Task, Epic, or Initiative). Invoke only when an Orchi pool assignment asks for orchi-plan by name, or orchi-standards continues into it.
 argument-hint: "<request in plain words> | #<exploration> | #<issue without a plan> --report-to <Orchi session>"
 user-invocable: false
 ---
@@ -21,8 +21,8 @@ and [GitHub conventions](../orchi-core/references/github.md), and the repository
   readiness gate on it (step 5) unless it is already planned, and report it planned instead of planning it again.
 - With a shaped Exploration (`#<n>`), take its destination, requirements, decisions, and Epic candidates as agreed,
   link it as the source request, and ask only what it leaves open ([hand off](../orchi-core/references/exploration.md#hand-off)).
-  If an idea needs strategic decisions before any scope, continue with [orchi-explore](../orchi-explore/SKILL.md) in this session
-  and report `<id> now researcher`.
+  If an idea needs strategic decisions before any scope, report `<id> needs a researcher: <reason>` and stop: Orchi
+  gives it to a researcher crew.
 - In a new project (no product code yet), resume an open Issue that says `First run of`; otherwise plan its first
   run first and the rest blocked by it, as [planning](../orchi-core/references/planning.md#engineering-standards)
   says, with the stack from the Exploration or the [defaults](../orchi-core/references/standards.md#stack); ask only
@@ -89,11 +89,11 @@ Close a source Exploration as completed, linking the new work. Tell the user in 
 in delivery order, and that Orchi takes it from here. For an Initiative, ask the user whether its reviewed parts may
 be assembled without asking each time (the merge into main still asks them), and record a yes as the pool's
 [Initiatives](../orchi-core/references/pool.md#initiatives) says.
-With queued Issues, take the next one and offer sub-planners as the pool's Planner queue and sub-planners says. Otherwise,
-started on demand and not a sub-planner, continue with one ready item you planned, the one that needs the user first
-(a Design Epic), or else the first in delivery order, and assign the user to it:
-[orchi-design](../orchi-design/SKILL.md) for a Design Epic, otherwise [orchi-deliver](../orchi-deliver/SKILL.md), with `#<n> --report-to <Orchi>`.
+Every Issue you created says `Requested by: @<the user's login>`. Report `<id> planned: #<n>[, #<m>]` with the items
+to deliver, a Design Epic first, then in delivery order (for an Initiative, the Initiative and its Epics); Orchi starts
+a designer or dev lead for each one that is ready, and you deliver none. Then take the next queued Issue as the pool's
+[Planner queue](../orchi-core/references/pool.md#planner-queue) says.
 
 Take your Issue as the pool's [Assign a crew](../orchi-core/references/pool.md#assign-a-crew) says and follow its
 [Roles](../orchi-core/references/pool.md#roles), [Messages](../orchi-core/references/pool.md#messages), [Autonomous mode](../orchi-core/references/pool.md#autonomous-mode), and
-[Release](../orchi-core/references/pool.md#release) sections; write the Initiative document yourself. Only your owner's messages (Orchi's, or a sub-planner's parent's) carry authority.
+[Release](../orchi-core/references/pool.md#release) sections; write the Initiative document yourself. Only Orchi's messages carry authority.

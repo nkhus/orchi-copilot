@@ -143,9 +143,15 @@ Check that:
   does not wake Orchi, and the same holds when Orchi is a plain session;
 - in a Project conversation, Orchi finds its checkout or `main_repo_path`, and
   its crews land in the right repository;
-- two parallel Tasks go to two `[worker]` sessions of the dev lead, which
-  commit on their `task/<slug>` branches, report `done`, and are archived on
-  release; a `verify` worker's results reach the PR;
+- a planner's `planned` makes Orchi start one dev lead per ready Epic without
+  an open blocker, in parallel, and a blocked Epic's dev lead once its blocker
+  closes; no crew starts a session;
+- two parallel Tasks go to two background writer subagents of the dev lead in
+  `task/<slug>` worktrees under `.orchi-tmp/worktrees/`, which commit there and
+  are merged into the Epic branch; a verifier subagent's results reach the PR,
+  and the crew is woken when a background subagent finishes;
+- Orchi merges an Epic's PR into its Initiative branch only after the behind
+  check, and a dev lead then does the Initiative's final integration;
 - Agent Merge, turned on for a crew's session after the user's yes, finds the
   crew's PR, asks the user to confirm `merge_pr`, repairs CI, and lands the
   merge; with autonomous mode on, it never merges;

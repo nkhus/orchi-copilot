@@ -12,14 +12,14 @@ Claude Code edition and is not changed from here.
   testing, knowledge, retrieval, standards), with their wording, headings, and
   anchors, and host mechanics replaced as the table below says.
 - The crew skills `orchi-explore`, `orchi-plan`, `orchi-standards`,
-  `orchi-design`, and `orchi-deliver`, the worker skill `orchi-work`, and the
-  entry `orchi`.
+  `orchi-design`, and `orchi-deliver`, and the entry `orchi`; the worker
+  skill `orchi-work` is left out, because crews start no sessions.
 - The six subagent roles, as the plugin's custom agents.
 - The scripts `status.py`, `knowledge.py`, and `standards.py`, and the assets:
   Issue forms, the PR template, the documentation and standards workflows, the
   documentation templates, and the `ENGINEERING.md` template.
 - The pool reference, rebuilt on the app's sessions: Orchi as a Copilot
-  Project, crews and per-task workers as child sessions, messages with a
+  Project, one crew per role as its child sessions, messages with a
   purpose, questions and plans, autonomous mode with a reconcile automation,
   Agent Merge, release, stalls, limits, updates, remote control, follow-ups,
   Initiatives, and lessons ([pool](pool.md#decisions) says what changed).
@@ -58,7 +58,7 @@ Claude Code edition and is not changed from here.
 | A Claude Desktop session and its sidebar group | A Copilot Project and its child sessions |
 | Crews started with a host tool | `create_session` child sessions in their own worktrees |
 | Crew messages | `send_session_message` |
-| Worker sessions cleared after each task | Per-task worker sessions started by the crew with `create_session` and archived on release |
+| Worker sessions cleared after each task | Writer and verifier subagents of the crew (`task` in background mode), in task worktrees for parallel Tasks; only Orchi starts sessions |
 | Questions answered in the crew's session | `ask_user` there, mirrored in the Project; `relay_session_input`, `answer_session_input`, `respond_to_session_plan_v2` |
 | Orchi's notes file and the dashboard stall check | A reconcile automation (`save_session_automation`) and `get_sessions_status` |
 | Merging on the user's yes | `gh pr merge`, or Agent Merge (`manage_agent_merge`) when the PR cannot merge yet |

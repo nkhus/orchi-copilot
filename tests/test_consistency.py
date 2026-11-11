@@ -38,7 +38,9 @@ def test_delivery_steps_match_the_review_and_knowledge_references():
 
 
 def test_orchi_picks_up_a_requested_plan_once_unblocked():
-    assert "open Issues nobody holds that say it and have no plan" in prose("orchi/SKILL.md")
+    entry = prose("orchi/SKILL.md")
+    assert "has its blockers closed, and that no crew holds and nobody but the user is assigned to" in entry
+    assert "for a planner, one without a parent or a plan" in entry
     assert "other Issues that need a plan, such as `Standards drift`, wait for the user" in prose("orchi-core/references/pool.md")
 
 
@@ -49,7 +51,6 @@ def test_an_exploration_with_several_items_hands_its_folder_to_the_first():
 
 
 def test_research_answers_reach_the_crew_in_full():
-    assert "followed by the role's full report: checks, red evidence, or the answer with its sources" in prose("orchi-work/SKILL.md")
     assert "build a prototype yourself on `prototype/<slug>`" in prose("orchi-explore/SKILL.md")
 
 
@@ -85,13 +86,12 @@ def test_flows_do_not_stall_and_keep_user_only_questions():
 
 def test_orchi_is_the_only_command_the_user_types():
     import yaml
-    for skill in ("orchi-explore", "orchi-plan", "orchi-standards", "orchi-design", "orchi-deliver", "orchi-work"):
+    for skill in ("orchi-explore", "orchi-plan", "orchi-standards", "orchi-design", "orchi-deliver"):
         text = (SKILLS / skill / "SKILL.md").read_text()
         meta = yaml.safe_load(text.split("---", 2)[1])
         assert meta["user-invocable"] is False, skill
-        if skill != "orchi-work":
-            assert "--report-to <Orchi session>" in meta["argument-hint"] and "[--report-to" not in meta["argument-hint"], skill
-            assert "tell the user that work starts with `/orchi`, and stop" in prose(f"{skill}/SKILL.md"), skill
+        assert "--report-to <Orchi session>" in meta["argument-hint"] and "[--report-to" not in meta["argument-hint"], skill
+        assert "tell the user that work starts with `/orchi`, and stop" in prose(f"{skill}/SKILL.md"), skill
     for path in SKILLS.rglob("*"):
         if path.is_file() and path.suffix in {".md", ".yml", ".py"}:
             assert not re.search(r"(?<![\w./-])/orchi-(explore|plan|standards|design|deliver|work)\b", path.read_text()), path
@@ -112,7 +112,7 @@ def test_the_user_answers_only_product_questions_and_nothing_waits_needlessly():
     assert "Issue is blocked by #<m> and #<m> has merged, send that crew `#<m> merged`" in prose("orchi/SKILL.md")
     assert "an unconfirmed one is a `blocker`" in prose("orchi-core/references/review-delivery.md")
     assert "report `#<n> waits for #<first run>`" in prose("orchi-design/SKILL.md")
-    assert "for one outside the Initiative, report `#<n> waits for #<m>`" in deliver
+    assert "for one still open, report `#<n> waits for #<m>`" in deliver
     assert "make each Epic that builds on it blocked by it" in planning
     assert "confirmed: <yes, no change avoids it" in prose("orchi-core/roles/orchi-reviewer.md")
     assert "CI runs on every pull request, whatever its base" in prose("orchi-core/references/standards.md")
@@ -165,4 +165,4 @@ def test_the_first_run_is_findable_and_acceptance_waits_for_its_harness():
     assert "planning adds an Issue without a plan" in prose("orchi-core/references/standards.md")
     deliver = prose("orchi-deliver/SKILL.md")
     assert "from a detached checkout of the PR head" in deliver and "stop it on `#<n> rework`" in deliver
-    assert "answer it before its `done` with `#<task> answer`" in deliver
+    assert "and start no session" in deliver

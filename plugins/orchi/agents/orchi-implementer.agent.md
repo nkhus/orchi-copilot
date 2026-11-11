@@ -29,7 +29,8 @@ If any input is missing, return `NOT READY` naming the missing input.
    instructions define, and check every item against the Task.
 3. Confirm that the worktree is on the named branch, that the branch matches the
    Epic's recorded branch (or, for a standalone Task, the branch named in the
-   brief), and that `git status` has no unexpected changes.
+   brief, and for a Task run in parallel, the `task/<slug>` branch the brief
+   names, created from the Epic's recorded branch), and that `git status` has no unexpected changes.
 
 If any checklist item fails, the branch does not match, or the brief contradicts
 the Issue, **make no edits** and return the report below with status

@@ -25,7 +25,8 @@ def test_two_misses_change_course_and_initiatives_step_back():
     assert deliver.count("(../orchi-core/references/execution.md#change-course)") == 3
     assert "## Step back between Epics" in read(SKILLS / "orchi-core/references/review-delivery.md")
     assert "[step back](../orchi-core/references/review-delivery.md#step-back-between-epics), show the user what changed" in deliver
-    assert "start the next only on their yes), then reclassify" in deliver
+    assert "record their yes in the Initiative's decision log), then report `done`" in deliver
+    assert "Orchi starts the next only on their yes" in prose(SKILLS / "orchi-core/references/review-delivery.md")
 
 
 def test_declined_work_is_checked_before_proposing():
@@ -50,8 +51,7 @@ def test_researcher_clones_only_outside_the_repository_and_never_runs_them():
 
 
 def test_delivery_skills_use_copilot_host_mechanics():
-    deliver, work = prose(SKILLS / "orchi-deliver/SKILL.md"), prose(SKILLS / "orchi-work/SKILL.md")
+    deliver = prose(SKILLS / "orchi-deliver/SKILL.md")
     assert "`task` tool, `agent_type` set to the agent's name" in deliver and "`send_session_message`" in deliver
-    assert "`send_session_message`" in work and "never use `ask_user`" in work
-    for text in (deliver, work):
+    for text in (deliver,):
         assert "$ARGUMENTS" not in text and "SendMessage" not in text and "dashboard" not in text.lower()

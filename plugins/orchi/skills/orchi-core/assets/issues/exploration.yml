@@ -5,7 +5,7 @@ labels: []
 body:
   - type: markdown
     attributes:
-      value: "An exploration produces decisions, not code; Orchi's exploration reference defines its phases. Keep this body as the current map: write research findings and options as files in docs/work/<slug>/ on the explore/<slug> branch and link them here, and link prototype branches, which are never merged. When the user confirms the shape, the researcher crew continues into planning with this Issue; planning takes these decisions as agreed, so write them for a planner who has not seen the exploration conversation."
+      value: "An exploration produces decisions, not code; Orchi's exploration reference defines its phases. Keep this body as the current map: write research findings and options as files in docs/work/<slug>/ on the explore/<slug> branch and link them here, and link prototype branches, which are never merged. When the user confirms the shape, Orchi gives this Issue to a planner crew; planning takes these decisions as agreed, so write them for a planner who has not seen the exploration conversation."
   - type: textarea
     id: destination
     attributes:

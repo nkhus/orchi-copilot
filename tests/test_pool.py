@@ -5,8 +5,8 @@ import yaml
 
 from conftest import PLUGIN, REFERENCES, SKILLS, read
 
-POOL_ANCHORS = {'sessions', 'roles', 'prepare-the-repository', 'assign-a-crew', 'a-stream-of-requests', 'messages',
-                'questions-and-plans', 'autonomous-mode', 'merge', 'workers', 'release', 'stalls', 'limits', 'status',
+POOL_ANCHORS = {'sessions', 'roles', 'prepare-the-repository', 'assign-a-crew', 'a-stream-of-requests', 'planner-queue', 'messages',
+                'questions-and-plans', 'autonomous-mode', 'merge', 'writers', 'release', 'stalls', 'limits', 'status',
                 'update-orchi', 'remote-control', 'follow-ups', 'initiatives', 'lessons'}
 
 
@@ -50,17 +50,14 @@ def test_every_session_starts_in_an_explicit_mode_never_plan():
     pool = prose(REFERENCES / 'pool.md')
     assert 'whose `mode` is always given, since the app otherwise starts it in plan mode' in pool
     assert '`interactive` while autonomous mode is off, `autopilot` while it is on' in pool
-    assert 'a `kickoff` in `autopilot` mode, since a worker never asks the user' in pool
     assert 'Crews never run in plan mode.' in pool
 
 
 def test_reports_carry_a_purpose_and_the_assignment_id():
-    pool, work = prose(REFERENCES / 'pool.md'), prose(SKILLS / 'orchi-work/SKILL.md')
+    pool = prose(REFERENCES / 'pool.md')
     assert 'Every report up passes a `purpose`' in pool and 'passes the `assignment_id`' in pool
     for purpose in ('progress', 'needs_input', 'handoff', 'error'):
         assert f'| `{purpose}` |' in pool, purpose
-    for purpose in ('handoff', 'needs_input', 'error'):
-        assert f'`{purpose}`' in work, purpose
 
 
 def test_agent_merge_lands_a_merge_only_on_the_users_word():
@@ -78,13 +75,19 @@ def test_autonomous_mode_keeps_a_reconcile_automation():
     assert '`get_session_automation`' in prose(SKILLS / 'orchi/SKILL.md')
 
 
-def test_workers_are_per_task_sessions_that_never_clear():
-    pool, work = prose(REFERENCES / 'pool.md'), prose(SKILLS / 'orchi-work/SKILL.md')
-    assert 'By default the writer is a subagent' in pool and '`[worker] <topic> <task>`' in pool
-    assert 'Git lets only one worktree check out a branch' in pool
-    for text in (pool, work):
+def test_only_orchi_starts_sessions_and_each_role_is_its_own_crew():
+    pool, entry = prose(REFERENCES / 'pool.md'), prose(SKILLS / 'orchi/SKILL.md')
+    assert not (SKILLS / 'orchi-work').exists()
+    assert 'Git lets only one worktree check out a branch' in pool and '`.orchi-tmp/worktrees/`' in pool
+    assert 'let a crew continue into another role or start a session' in entry
+    for skill in ('orchi-explore', 'orchi-plan', 'orchi-design', 'orchi-deliver'):
+        text = prose(SKILLS / f'{skill}/SKILL.md')
+        assert 'now <role>' not in text and 'worker' not in text and 'orchi-work' not in text, skill
+    for text in (pool, entry):
+        assert '[worker]' not in text and 'sub-planner' not in text and 'now <role>' not in text
         assert '/clear' not in text and 'clears itself' not in text
-    assert 'Your crew then archives this session' in work and 'never use `ask_user`' in work
+    assert 'report `<id> shaped: #<n>` and stop' in prose(SKILLS / 'orchi-explore/SKILL.md')
+    assert '| An Initiative whose Epics are all closed | Dev lead |' in pool
 
 
 def test_setup_runs_from_the_bundled_script_and_checks_first():

@@ -82,9 +82,9 @@ phases follow once the user says to build it.
    product, fill the Stack section from the
    [standards defaults](standards.md#stack) and state it once; never ask the user
    to choose a tool. Then read
-   the whole Issue back to the user. Done when the user confirms it is shaped. When
-   planning continues in the same session, that confirmation also agrees the
-   plan's outcome and direction; planning asks only about scope it adds.
+   the whole Issue back to the user. Done when the user confirms it is shaped;
+   that confirmation also agrees the plan's outcome and direction, so planning
+   asks only about scope it adds.
 
 ## Design session
 
@@ -245,7 +245,7 @@ code waits for.
 
 ## Hand off
 
-When the user confirms the shape, the researcher crew continues into planning in the same session.
+When the user confirms the shape, the researcher crew reports it, and Orchi gives the Exploration to a new planner crew.
 Planning takes the destination, requirements, decisions, and Epic candidates as
 agreed, links the Exploration as the source request, and asks only what the
 exploration left open. It creates its Initiative or Epic branch from
