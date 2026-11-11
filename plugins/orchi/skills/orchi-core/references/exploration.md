@@ -9,7 +9,7 @@ reopening its decisions.
 
 ## The Exploration Issue
 
-One Issue labelled `Exploration` holds the exploration's state, so it survives
+One Issue titled `Explore: <topic>`, without a type label, holds the exploration's state, so it survives
 across sessions, and one branch, `explore/<slug>` from main, holds its working
 folder `docs/work/<slug>/` ([working documents](knowledge.md#working-documents)).
 Create both once the user agrees on the destination. The Issue body is the
@@ -28,7 +28,7 @@ links survive when the branch moves on and the folder is later deleted.
 | Requirements | Numbered requirements (R1, R2, ...) of the chosen direction, each observable at completion |
 | Design | For a product with a user interface: the screen map, the approved wireframe of each key screen, the references, the design engine, the approved comp, and the clickable mockup, each linked to its file in `design/` (see [Design](#design-session)) |
 | Shape | The chosen direction, and candidate Epics as outcomes with the result or contract each supplies to the next |
-| Product | For a product with a user interface: the product truth the first design Epic records in `PRODUCT.md` (see Shape) |
+| Product | For a product with a user interface: the product truth the first Design Epic records in `PRODUCT.md` (see Shape) |
 | Ideas | Every idea the user raised and parked, and every direction, variant, or remark they turned down, with why |
 | Open questions | What is still open, with what each question blocks; questions you can only sense so far are listed as such |
 
@@ -76,7 +76,7 @@ phases follow once the user says to build it.
    mechanism no competitor shares, positioning, platform, stack (from the Stack
    section), constraints, brand
    commitments, evidence, and the accessibility level (WCAG 2.2 AA unless the
-   user says otherwise; do not ask). The first design Epic writes `PRODUCT.md`
+   user says otherwise; do not ask). The first Design Epic writes `PRODUCT.md`
    from it and asks only what is missing, and builds the approved mockup on the
    stack. For a new
    product, fill the Stack section from the

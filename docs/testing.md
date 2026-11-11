@@ -51,7 +51,7 @@ The test suite, in `tests/`:
 | `test_consistency.py` | Skills, agents, and references agree where a session follows one and not the other |
 | `test_delivery.py` | Writer continuation, verification verdicts, and delivery course corrections |
 | `test_design.py` | The design track's wording across planning, readiness, the forms, the skills, and the designer agent |
-| `test_board.py` | `board.py`: the crews' states, claims, deferred and held items, questions kept in comments with sent and answered ones, each card's column, Epic and Initiative aggregation and progress, history with back-moves, and what waits for the user |
+| `test_board.py` | `board.py`: the crews' states, assignees and linked branches, deferred and held items, questions kept in comments with sent and answered ones, each card's column, Epic and Initiative aggregation and progress, history with back-moves, and what waits for the user |
 | `test_canvases.py` | The canvases extension under Node: request sentences (answers with their `request_id`, plans, reviews), the board's Summary prose linking `#<n>` and crew names, round checks, path containment, and the loopback server's token, `Host`, and JSON checks; skipped without Node |
 | `test_context.py`, `test_knowledge.py` | `knowledge.py` snapshot isolation, reads, lint, `impact`, and `work`, and the vendored copy run from a repository root |
 | `test_standards.py` | `standards.py check` and `ruleset` |
@@ -84,15 +84,20 @@ Tasks, an exploration handed to planning, and delivery with writer subagents.
 Check that:
 
 - `/orchi` in the Project, or in a plain session, prepares the repository in the
-  same turn: `setup.py --check` fails, a setup subagent commits `Set up Orchi`
-  and pushes it, and the user is asked only what they alone can answer;
+  same turn: `setup.py --check` fails, a setup subagent opens a
+  `chore/repository-setup` PR whose files never name Orchi, and the user is
+  asked only what they alone can answer;
 - an idea goes to a researcher crew and a request to a planner crew, each a
   child session named `[<role>] <topic>`, and while autonomous mode is off the
   crew asks the user directly and its question also shows in the Project;
 - the assistant researches and agrees scope before creating branches or Issues,
-  uses the branch and label conventions, and never merges without authority;
-- "take #n" on `delivery-ready` work goes to a dev lead crew, and on work
-  without it is refused with the reason;
+  uses the branch, label, and title conventions, and never merges without authority;
+- "take #n" on planned work nobody holds goes to a dev lead crew and assigns
+  the user, and on work without a plan, or that someone else holds, is refused
+  with the reason;
+- a developer using another assistant, without Orchi, reads only neutral rules
+  in `AGENTS.md`, and an Issue they assign themselves or link a branch to is
+  left alone by the pool;
 - a dev lead gives each Task to an `orchi-implementer` or `orchi-fixer`
   subagent, sends a review defect back to the same writer with `write_agent`,
   reads the diff, and pushes; the PR lists each finding with its resolution;
@@ -104,7 +109,7 @@ Check that:
   recommendation, still passes a `(user)` question about money, access, a
   deploy, or a destructive action to the user, and merges a reviewed PR with
   passing checks;
-- a `design` Epic goes to a designer crew whose rounds put variants under
+- a Design Epic goes to a designer crew whose rounds put variants under
   `.orchi-tmp/board/v/<round>/`, each labelled by its idea, and publish them
   on the design board, whose Round done brings the ratings back through
   `read_picks`;

@@ -50,7 +50,7 @@ plan or code, from the fetched remote target; never reset another checkout. Do n
 
 - Parallel work happens across independent Epics, each with its own owner, branch, and worktree. Tasks within an Epic
   share its branch and PR and run in sequence, except a pool dev lead's Tasks on different files (pool reference).
-- Claim before editing and never overwrite another owner's claim. Only ready Epics and standalone Tasks are independent
+- Take work (assign yourself) before editing, and never take an Issue someone else holds. Only ready Epics and standalone Tasks are independent
   entry points. Update documentation with the code, in the same branch; never present planned behavior as current.
 - Show each new test failing before the change, and record checks, outcomes, and the candidate commit in the PR. Review
   each standalone Task and each assembled Epic once, unless it only configures tools; repair demonstrated blockers with
@@ -72,7 +72,7 @@ Read only the reference needed for the current stage.
 | Explore and shape an idea before any scope | [Exploration](references/exploration.md) |
 | Clarify with the user, design, and write Issues for agents | [Planning](references/planning.md) |
 | Check that a Task or Epic is ready to start or delegate | [Readiness](references/readiness.md) |
-| Find ready work, claim, execute, hand off, resume | [Execution](references/execution.md) |
+| Find ready work, take it, execute, hand off, resume | [Execution](references/execution.md) |
 | Plan, write, or review tests; diagnose a defect | [Testing](references/testing.md) |
 | Set, audit, or follow a project's engineering standards (`ENGINEERING.md`) | [Standards](references/standards.md) |
 | Review, integrate, and close | [Review and delivery](references/review-delivery.md) |
@@ -84,7 +84,7 @@ Read only the reference needed for the current stage.
 ## Entry skills and subagents
 
 `orchi` is the entry the user types. Crews run `orchi-explore` (idea → Exploration), `orchi-plan` (request → ready
-Issues), `orchi-standards` (standards audit or hardening), `orchi-design` (design Epic → PR), and `orchi-deliver`
+Issues), `orchi-standards` (standards audit or hardening), `orchi-design` (Design Epic → PR), and `orchi-deliver`
 (Issue → PR); workers run `orchi-work`. They are hidden from the menu. Sessions may start the plugin's custom agents
 with `task` ([roles](references/roles.md)): `orchi-scout` retrieves, `orchi-researcher` researches and designs options
 for an exploration, `orchi-implementer` executes one ready Task, `orchi-fixer` makes one small, fully specified change

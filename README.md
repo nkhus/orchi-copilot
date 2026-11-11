@@ -45,10 +45,10 @@ copilot plugin install orchi@orchi-copilot
 
 **4. Type `/orchi`** in the Project's conversation, with your first request if
 you have one. From then on that conversation is Orchi; just talk to it. On
-its first turn it prepares the repository: labels, Issue forms, the PR
-template, the documentation and standards checks, an `AGENTS.md` section, and
-the repository's Copilot settings, committed and pushed to the default branch.
-You don't commit or push anything. From then on, tell Orchi what you want; it
+its first turn it prepares the repository: the type labels, a PR template
+section, the documentation and standards checks, and a development-rules
+section in `AGENTS.md`, none of which names Orchi, in one setup PR for you to
+merge. You don't commit or push anything. From then on, tell Orchi what you want; it
 starts a crew session for each request and archives it when the work is done.
 
 > **Needs** Git, a GitHub remote, an authenticated GitHub CLI (`gh`), and
@@ -92,10 +92,10 @@ flowchart LR
     U(["You"]) -->|"plain words"| O{{"Orchi<br/>the Copilot Project"}}
     O -->|idea| R["Researcher crew<br/>frames, researches, compares options"]
     O -->|request or fix| P["Planner crew<br/>agrees scope, writes ready Issues"]
-    O -->|design Epic| D["Designer crew<br/>references, variants, and comps with you"]
+    O -->|Design Epic| D["Designer crew<br/>references, variants, and comps with you"]
     O -->|ready work| L["Dev lead crew<br/>branch, writers, review, PR"]
     R -->|shape agreed| P
-    P -->|delivery-ready| L
+    P -->|planned| L
     L --> S["Custom agents<br/>scout · researcher · implementer<br/>fixer · designer · reviewer"]
     D --> S
     L -->|PR ready| O
@@ -177,8 +177,10 @@ rigorous review are the gate.
 ## Under the hood
 
 Orchi is a Copilot plugin of skills and custom agents. Git and GitHub are its
-only shared state: claims, labels, native sub-issues, `blocked by`
-dependencies, and PRs. Any session can restart and catch up.
+only shared state, read through standard signals anyone can set: assignees,
+linked branches and PRs, the type labels, native sub-issues, and `blocked by`
+dependencies. Any session can restart and catch up, and a developer with another
+assistant can work in the same repository without knowing about Orchi.
 
 <details>
 <summary><strong>Skills</strong>: you type only <code>/orchi</code>; the rest are hidden role skills</summary>
@@ -186,10 +188,10 @@ dependencies, and PRs. Any session can restart and catch up.
 | Skill | Run by | Does |
 | --- | --- | --- |
 | [`orchi`](plugins/orchi/skills/orchi/SKILL.md) | You (the Project, or `/orchi [request]`) | Makes the conversation Orchi: prepares the repository, starts a crew per request, relays what crews report, and tells you only about decisions, merges, and waiting questions |
-| [`orchi-explore`](plugins/orchi/skills/orchi-explore/SKILL.md) | Researcher crew | Shapes an idea with you in an `Exploration` Issue and an `explore/<slug>` branch, then continues into planning |
-| [`orchi-plan`](plugins/orchi/skills/orchi-plan/SKILL.md) | Planner crew | Proposes a scope, clarifies, shows the breakdown, creates ready Issues, and labels them `delivery-ready` |
+| [`orchi-explore`](plugins/orchi/skills/orchi-explore/SKILL.md) | Researcher crew | Shapes an idea with you in an `Explore:` Issue and an `explore/<slug>` branch, then continues into planning |
+| [`orchi-plan`](plugins/orchi/skills/orchi-plan/SKILL.md) | Planner crew | Proposes a scope, clarifies, shows the breakdown, and creates Issues planned for delivery |
 | [`orchi-standards`](plugins/orchi/skills/orchi-standards/SKILL.md) | Planner crew | Audits an existing project's checks and plans a standards Epic, or plans hardening |
-| [`orchi-design`](plugins/orchi/skills/orchi-design/SKILL.md) | Designer crew | Runs a `design` Epic with you: references, engine and direction rounds, an approved comp per surface, and the builds |
+| [`orchi-design`](plugins/orchi/skills/orchi-design/SKILL.md) | Designer crew | Runs a Design Epic with you: references, engine and direction rounds, an approved comp per surface, and the builds |
 | [`orchi-deliver`](plugins/orchi/skills/orchi-deliver/SKILL.md) | Dev lead crew | Delivers a Task, Epic, or Initiative through writer subagents, one review, and a PR; never merges into `main` itself |
 | [`orchi-work`](plugins/orchi/skills/orchi-work/SKILL.md) | A worker session, started by a crew for one task | Implements, fixes, or designs one Task, runs long checks, merges a conflicting base, or answers one research question |
 | [`orchi-core`](plugins/orchi/skills/orchi-core/SKILL.md) | Every Orchi session | The workflow: scope, readiness, execution, testing, review, knowledge, standards, and the pool |
@@ -218,19 +220,18 @@ Issues, push, or merge. See [roles](plugins/orchi/skills/orchi-core/references/r
 
 | File or directory | Purpose |
 | --- | --- |
-| `AGENTS.md` | A managed section that sends work to Orchi |
-| `.github/ISSUE_TEMPLATE/orchi-*.yml` | The Initiative, Epic, Task, and Exploration forms |
-| PR template | A managed section: Summary, Verification, Merge risk, Exceptions, Documentation impact, and Handoff |
-| `.github/workflows/orchi-docs.yml`, `orchi-standards.yml` | The documentation and standards checks |
-| `.github/orchi/scripts/` | Copies of `knowledge.py` and `standards.py` that the workflows run |
-| `.github/orchi/manifest.json` | The digests of what setup manages |
-| `.github/copilot/settings.json` | Offers the plugin to everyone who works on the repository |
-| `.github/github-app.yml` | When missing: instructions for the app's sessions |
-| `.gitignore` | A managed section that ignores `.orchi-tmp/` |
-| Labels | The nine labels the workflow uses |
+| `AGENTS.md` | A managed `## Development rules` section that any developer or assistant follows |
+| PR template | A managed section: Summary, Verification, and Documentation impact |
+| `.github/workflows/docs-check.yml`, `standards-check.yml` | The documentation and standards checks on pull requests |
+| `.github/scripts/` | Copies of `knowledge.py` and `standards.py` that the workflows run |
+| Labels | The type labels `Initiative`, `Epic`, and `Task` |
+
+None of these files names Orchi; the Issue forms and Orchi's workflow stay in the
+plugin. Orchi commits them on `chore/repository-setup` and opens a PR for you
+to merge.
 
 Setup keeps your own content: it maintains only the sections between
-`<!-- orchi:begin -->` and `<!-- orchi:end -->` and the files it created, and
+`<!-- managed:begin -->` and `<!-- managed:end -->` and the files it created, and
 refuses to overwrite anything you edited. Your repository's instructions take
 precedence over Orchi's defaults.
 

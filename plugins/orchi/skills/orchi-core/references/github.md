@@ -3,23 +3,35 @@
 Use when creating, editing, relating, or closing Issues and PRs. A repository's
 own issue rules and templates take precedence; these are defaults. Prefer current
 `gh` help over remembered flags, since relationship support changes. Ownership and
-claiming are in [execution](execution.md).
+taking work are in [execution](execution.md).
 
-## Setup
+## Labels and signals
 
-Orchi uses the type labels `Initiative`, `Epic`, and `Task`; `in-progress` for
-claims; `Exploration` for explorations; `design` for an Epic a designer runs;
-and `needs-planning`, `delivery-ready`, and `retro` for hand-offs. A repository
-Orchi [prepared](pool.md#prepare-the-repository) already has them, plus issue
-templates, a PR template, and the documentation and standards check workflows.
-Otherwise, create missing labels deliberately
-with a stable description; do not invent variants.
+The only labels are the type labels `Initiative`, `Epic`, and `Task`, with
+neutral descriptions; a repository Orchi
+[prepared](pool.md#prepare-the-repository) already has them, plus a PR template
+and the documentation and standards check workflows. Otherwise create a
+missing one deliberately, and invent no other labels. Everything else is a
+standard GitHub signal that anyone can set without knowing about Orchi:
+
+- **Taken:** an assignee, a linked branch, or an open PR that closes the Issue.
+  Take work by assigning yourself (`gh issue edit <n> --add-assignee @me`) and
+  pushing its branch; never write a claim line in the body.
+- **Planned:** native sub-issues, or a `Requirements` section listing `R1`.
+  Without either, the Issue needs a plan.
+- **Exploration:** an Issue titled `Explore: <topic>`, with no type label.
+- **Lesson:** an Issue titled `Lesson: <what failed>`, filed after delivery.
+- **Design Epic:** an Epic whose UI design section starts with `Design Epic:`.
+- **Requested by:** `@<owner login>` in a body, never a tool's name.
+
+Issue forms for each type are in `../assets/issues/`; they live in the plugin,
+not in the repository. `status.py` reads these signals.
 
 ## Titles and tags
 
 Every Initiative and Epic has a short tag. A title starts with the tags of its
 Initiative and Epic, in that order, then a short outcome. The type comes from the
-label, not the title.
+label, not the title, except an Exploration's `Explore:` prefix.
 
 | Issue (label) | Title | Branch |
 | --- | --- | --- |

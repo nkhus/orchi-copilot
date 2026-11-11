@@ -12,7 +12,7 @@ and keep the decisions still in force.
 | [`README.md`](../README.md) | What Orchi is, how it works in the Copilot app, and how to start |
 | [`docs/workflow.md`](workflow.md) | The core workflow: exploration, planning, delivery, review, subagent roles, Issue forms |
 | [`docs/pool.md`](pool.md) | Orchi as a Copilot Project, crews and workers as child sessions, messages, questions, autonomous mode, merge, release, updates |
-| [`docs/design.md`](design.md) | User interface design: the design track, the `design` Epic, and the designer agent |
+| [`docs/design.md`](design.md) | User interface design: the design track, the Design Epic, and the designer agent |
 | [`docs/canvases.md`](canvases.md) | The plugin's canvases: the Orchi board, the design board, and the Browser canvas |
 | [`docs/standards.md`](standards.md) | Engineering standards: `ENGINEERING.md`, the default stack and checks, gate integrity |
 | [`docs/context.md`](context.md) | Project context: current documentation, working documents, the ownership map and its checks |

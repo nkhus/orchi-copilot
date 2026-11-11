@@ -63,7 +63,7 @@ Agree the breakdown and check each Issue against the readiness checklists as
 
 ## As a crew
 
-Adopt Orchi's claim as the pool's [Assign a crew](../orchi-core/references/pool.md#assign-a-crew) says and follow its
+Take your Issue as the pool's [Assign a crew](../orchi-core/references/pool.md#assign-a-crew) says and follow its
 [Roles](../orchi-core/references/pool.md#roles), [Messages](../orchi-core/references/pool.md#messages), [Autonomous mode](../orchi-core/references/pool.md#autonomous-mode), and [Release](../orchi-core/references/pool.md#release) sections.
 Ask the user with `ask_user`. The stack
 derived from the defaults is a technical choice, yours to make; the product

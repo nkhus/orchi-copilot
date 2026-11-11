@@ -52,7 +52,7 @@ body:
     id: ui
     attributes:
       label: UI design
-      description: For an Epic that changes a user interface - its design depth (none, brief, or Epic); the surface brief link at depth brief; for a design Epic, the surfaces it designs, what must stay, and whether it replaces DESIGN.md; or the design Epic it is blocked by. Write "No user interface change" otherwise.
+      description: For an Epic that changes a user interface - its design depth (none, brief, or Epic); the surface brief link at depth brief; for a Design Epic, start with "Design Epic:" and name the surfaces it designs, what must stay, and whether it replaces DESIGN.md; or the Design Epic it is blocked by. Write "No user interface change" otherwise.
     validations:
       required: false
   - type: textarea

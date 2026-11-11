@@ -26,13 +26,13 @@ def test_planning_sets_design_depth_and_only_the_user_chooses_a_direction():
     planning, plan = reference("planning"), skill("orchi-plan")
     for depth in ("| None |", "| Brief |", "| Epic |"):
         assert depth in planning
-    assert "Plan a standalone `design` Epic (labels `Epic` and `design`) for a designer crew, outside any Initiative" in planning
-    assert "`Deferred until #<design Epic>`" in planning and "blocked by the design Epic" in planning
+    assert "Plan a standalone Design Epic (label `Epic`, its UI design section starting with `Design Epic:`) for a designer crew, outside any Initiative" in planning
+    assert "`Deferred until #<Design Epic>`" in planning and "blocked by the Design Epic" in planning
     assert "Only the user names references, chooses the engine and a direction, and approves a comp or a generated asset, or Orchi in autonomous mode." in planning
-    assert "a new product picks it in its exploration's design session, and a project without either picks it in its first design Epic" in planning
+    assert "a new product picks it in its exploration's design session, and a project without either picks it in its first Design Epic" in planning
     assert "planning.md#user-interface-design" in plan
     assert "agree the references and the surface brief with the user now" in plan
-    assert "a design Epic leaves references, the engine, and the direction to its designer" in plan
+    assert "a Design Epic leaves references, the engine, and the direction to its designer" in plan
 
 
 def test_ui_readiness_items_have_form_fields():
@@ -44,11 +44,11 @@ def test_ui_readiness_items_have_form_fields():
 
 def test_designer_crew_role_routing_and_mode_agree():
     pool, design = reference("pool"), skill("orchi-design")
-    assert "| Designer | `orchi-design` | One standalone `design` Epic, with the user |" in pool
-    assert '"Take #n" on a `delivery-ready` Epic labelled `design` | Designer | `orchi-design`' in pool
+    assert "| Designer | `orchi-design` | One standalone Design Epic, with the user |" in pool
+    assert '"Take #n" on a planned Design Epic | Designer | `orchi-design`' in pool
     assert "Only the user names references, chooses the engine and a direction, and approves a comp or a generated asset, or Orchi in autonomous mode" in design
     assert "Continue with [orchi-deliver](../orchi-deliver/SKILL.md)" in design
-    assert "Ask the user directly while autonomous mode is off, and Orchi while it is on" in design and "Adopt Orchi's claim" in design
+    assert "Ask the user directly while autonomous mode is off, and Orchi while it is on" in design and "Take your Issue as the pool's" in design
     assert "asks for orchi-design by name" in design
     assert "`ask_user`" in design and "`agent_type: orchi-designer`" in design
     assert "(../orchi-core/references/roles.md#design-skills)" in design and "does not bundle them" in design
@@ -58,7 +58,7 @@ def test_designer_crew_role_routing_and_mode_agree():
 def test_exploration_records_product_truth_and_references():
     exploration, design = reference("exploration"), skill("orchi-design")
     assert "| Product | For a product with a user interface" in exploration
-    assert "The first design Epic writes `PRODUCT.md` from it and asks only what is missing" in exploration
+    assert "The first Design Epic writes `PRODUCT.md` from it and asks only what is missing" in exploration
     assert "How screens should look is not settled here" not in exploration
     assert "id: product" in form("exploration.yml")
     assert "write it with the user from the Product section of the Exploration" in design
@@ -126,8 +126,8 @@ def test_design_epic_and_planning_reuse_the_design_session():
     design, planning = skill("orchi-design"), reference("planning")
     assert "ran a design session (its Design section), copy what the user approved" in design
     assert "step 2 covers only the surfaces the session left out" in design
-    assert "the design Epic names its Design section as its source" in planning
-    assert "A design Epic without a design session behind it then agrees references with the user" in planning
+    assert "the Design Epic names its Design section as its source" in planning
+    assert "A Design Epic without a design session behind it then agrees references with the user" in planning
 
 
 def test_designer_wireframes_with_prototype_and_mocks_the_whole_system():

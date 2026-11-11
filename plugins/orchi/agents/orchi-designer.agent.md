@@ -41,7 +41,7 @@ You build only against settled decisions in files the user approved:
 
 - `PRODUCT.md`: product truth, platform, and stack;
 - `DESIGN.md`, when it exists: the design engine and the visual system; in a
-  `design` Epic that replaces `DESIGN.md`, the approved briefs and comps
+  Design Epic that replaces `DESIGN.md`, the approved briefs and comps
   override it until the new one lands;
 - the references in `docs/design/references/`;
 - the surface brief in `docs/design/surfaces/` that the Issue links, and the
@@ -65,14 +65,14 @@ Issue's word; otherwise return `ESCALATE` (`decision`).
 
 ## Required input
 
-- **Wireframe mode:** the Exploration's or design Epic's number, the screen and
+- **Wireframe mode:** the Exploration's or Design Epic's number, the screen and
   its brief (path), the layouts the user already ruled in or out, and an empty
   output folder in `.orchi-tmp/`.
-- **Variant mode:** the Exploration's or design Epic's number, the surface, the
+- **Variant mode:** the Exploration's or Design Epic's number, the surface, the
   engine (Hallmark or prototype), the surface brief and references (paths), the
   approved wireframe or comps so far, if any, and an empty output folder in
   `.orchi-tmp/`.
-- **Mockup mode:** the Exploration's or design Epic's number, the engine, the
+- **Mockup mode:** the Exploration's or Design Epic's number, the engine, the
   screen map and each key screen's brief, the references, the approved comp
   that set the style (in prototype mode, a direction in one line instead), an
   empty output folder in `.orchi-tmp/`, and, to change a mockup, its folder and

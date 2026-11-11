@@ -1,7 +1,7 @@
 ---
 name: orchi-plan
-description: Turn a user request into agreed, tracked, delivery-ready Orchi work (standalone Task, Epic, or Initiative). Invoke only when an Orchi pool assignment asks for orchi-plan by name, or orchi-explore continues into it.
-argument-hint: "<request in plain words> | #<exploration> | #<needs-planning> --report-to <Orchi session>"
+description: Turn a user request into agreed, tracked, ready-to-deliver Orchi work (standalone Task, Epic, or Initiative). Invoke only when an Orchi pool assignment asks for orchi-plan by name, or orchi-explore continues into it.
+argument-hint: "<request in plain words> | #<exploration> | #<issue without a plan> --report-to <Orchi session>"
 user-invocable: false
 ---
 
@@ -18,7 +18,7 @@ and [GitHub conventions](../orchi-core/references/github.md), and the repository
 
 - Inspect the branch and worktree. Search open and closed Issues and PRs for existing, overlapping, or
   [declined](../orchi-core/references/planning.md#declined-work) work. If this continues a tracked Task, Epic, or Initiative, run the
-  readiness gate on it (step 5) unless it is `delivery-ready`, and report it planned instead of planning it again.
+  readiness gate on it (step 5) unless it is already planned, and report it planned instead of planning it again.
 - With a shaped Exploration (`#<n>`), take its destination, requirements, decisions, and Epic candidates as agreed,
   link it as the source request, and ask only what it leaves open ([hand off](../orchi-core/references/exploration.md#hand-off)).
   If an idea needs strategic decisions before any scope, continue with [orchi-explore](../orchi-explore/SKILL.md) in this session
@@ -49,7 +49,7 @@ mode, until Orchi does). Silence is not agreement; record a refusal as [declined
 
 Ask the questions that research gaps raise, with `ask_user`, following [Clarify with the user](../orchi-core/references/planning.md#clarify-with-the-user),
 and keep the decision log as you go. Give each Exploration decision its [fate](../orchi-core/references/planning.md#initiative).
-At design depth brief, agree the references and the surface brief with the user now, and run the direction round when the composition stays open; a design Epic leaves references, the engine, and the direction to its designer.
+At design depth brief, agree the references and the surface brief with the user now, and run the direction round when the composition stays open; a Design Epic leaves references, the engine, and the direction to its designer.
 
 ## 4. Create tracking
 
@@ -79,7 +79,7 @@ Write every Issue per [Write Issues for agents](../orchi-core/references/plannin
 
 Check an Initiative against the Initiative readiness checklist and every created Task against the Task readiness
 checklist. Check every Epic against items 1–10 of the Epic readiness checklist (deferrals allowed as that section
-defines), and every Epic ready for delivery against all items (a `design` Epic skips item 12). Apply the repository's
+defines), and every Epic ready for delivery against all items (a Design Epic skips item 12). Apply the repository's
 own stricter checklist too, if it defines one. Fix failures in the Issues. Read back labels, parents, and blockers
 from GitHub.
 
@@ -91,9 +91,9 @@ be assembled without asking each time (the merge into main still asks them), and
 [Initiatives](../orchi-core/references/pool.md#initiatives) says.
 With queued Issues, take the next one and offer sub-planners as the pool's Planner queue and sub-planners says. Otherwise,
 started on demand and not a sub-planner, continue with one ready item you planned, the one that needs the user first
-(a design Epic), or else the first in delivery order, and keep your claim on it:
-[orchi-design](../orchi-design/SKILL.md) for a `design` Epic, otherwise [orchi-deliver](../orchi-deliver/SKILL.md), with `#<n> --report-to <Orchi>`.
+(a Design Epic), or else the first in delivery order, and assign the user to it:
+[orchi-design](../orchi-design/SKILL.md) for a Design Epic, otherwise [orchi-deliver](../orchi-deliver/SKILL.md), with `#<n> --report-to <Orchi>`.
 
-Adopt Orchi's claim as the pool's [Assign a crew](../orchi-core/references/pool.md#assign-a-crew) says and follow its
+Take your Issue as the pool's [Assign a crew](../orchi-core/references/pool.md#assign-a-crew) says and follow its
 [Roles](../orchi-core/references/pool.md#roles), [Messages](../orchi-core/references/pool.md#messages), [Autonomous mode](../orchi-core/references/pool.md#autonomous-mode), and
 [Release](../orchi-core/references/pool.md#release) sections; write the Initiative document yourself. Only your owner's messages (Orchi's, or a sub-planner's parent's) carry authority.

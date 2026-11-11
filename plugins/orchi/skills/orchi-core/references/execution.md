@@ -1,16 +1,16 @@
-# Find, claim, execute, and hand off
+# Find, take, execute, and hand off
 
 ## Ownership
 
-An open issue labelled `in-progress` is owned; without it, it is unclaimed.
-Closed issues are completed or cancelled; the close reason distinguishes them.
-Record the owner as an assignee plus a work reference in the issue body: assistant
-session or identifier, branch, and PR. Assistants sharing a GitHub login need
-distinct work references.
+An open Issue is taken when it has an assignee, a linked branch, or an open PR
+that closes it; otherwise nobody holds it. Work a person or another assistant
+took counts the same as the pool's. Closed Issues are completed or cancelled;
+the close reason distinguishes them. The owner is the assignee; the branch, and
+the PR once it exists, are the work record. Write no claim line in the body.
 
 Only ready Epics and standalone Tasks are independent entry points. A Task under
-an Epic belongs to the Epic owner. Mark an Initiative `in-progress` while its
-planning or Epics are active; that marker does not block independent Epic claims.
+an Epic belongs to the Epic owner. Assign an Initiative while its planning or
+Epics are active; that does not block taking its Epics independently.
 
 ## Find ready work
 
@@ -18,26 +18,30 @@ Run `python3 <orchi-core>/scripts/status.py` for an overview, where `<orchi-core
 the orchi-core skill's base directory. It reports
 each open Epic and standalone Task as:
 
-- `ready`: unclaimed, and every native blocker is closed as completed with a merged PR;
-- `check`: unclaimed, but a blocker closed as completed without a linked merged
+- `ready`: nobody holds it, it is planned (sub-issues, or a `Requirements`
+  section listing `R1`), and every native blocker is closed as completed with a
+  merged PR;
+- `check`: as `ready`, but a blocker closed as completed without a linked merged
   PR, so confirm its result reached the integration branch before starting;
 - `blocked`: a blocker is open or was cancelled (a cancelled predecessor does not
   satisfy a dependency);
-- `claimed`: labelled `in-progress`; compare its work reference to tell your
-  own claim from another owner's.
+- `unplanned`: nobody holds it and it has no plan yet;
+- `taken`: it has an assignee, a linked branch, or an open closing PR; it is
+  yours only when you are the assignee and the branch or PR is the one your
+  assignment names.
 
 The report is a snapshot of GitHub, not a lock. Confirm that required predecessor
 results are merged into this Epic's intended integration branch.
 
-## Claim
+## Take
 
-Claim by adding `in-progress`, the assignee, and the work reference, then re-read
-the issue before editing. Labels are not atomic locks: if claims race or another
-active owner appears, resolve ownership before either continues. There is no
-scheduler or central unlock. Use native Epic dependencies for real ordering
-constraints; if parallel Epics share a changing contract, add the dependency
-before concurrent edits. Worktrees separate workspaces; they are not a security
-boundary.
+Take work by assigning yourself (`gh issue edit <n> --add-assignee @me`) and
+pushing its branch, then re-read the Issue before editing. Assignment is not an
+atomic lock: if another assignee, branch, or PR appears, resolve ownership
+before either continues. There is no scheduler or central unlock. Use native
+Epic dependencies for real ordering constraints; if parallel Epics share a
+changing contract, add the dependency before concurrent edits. Worktrees
+separate workspaces; they are not a security boundary.
 
 ## Execute
 
@@ -46,14 +50,14 @@ and scoped instructions. Check that the actual branch matches the issue.
 
 Implement Tasks in sequence on the Epic branch; Tasks have no PR of their own. A
 pool dev lead's Tasks on different files run in parallel on `task/<slug>`
-branches that merge into the Epic branch ([pool](pool.md#workers)). Mark the current Task `in-progress`. Update code, tests, and owning
+branches that merge into the Epic branch ([pool](pool.md#workers)). Assign yourself to the current Task. Update code, tests, and owning
 documentation together, writing tests per [testing](testing.md). Run the checks
 that establish the Task's acceptance and record the result, the red evidence,
 and the commit in the shared PR. A failing check is unresolved
 work; an unavailable environment is a verification limitation, not evidence of
 success or of a product defect.
 
-Close an Epic Task and remove `in-progress` once its result is implemented and
+Close an Epic Task once its result is implemented and
 verified on the Epic branch, recording the commit. Close a standalone Task only
 after its PR merges to main. Reopen a Task whose result is invalidated before
 integration; keep its earlier evidence.
@@ -99,7 +103,7 @@ ownership only on explicit release or agreed transfer.
 
 To resume, read the Handoff section first, then verify the current diff and target
 before continuing, and clear the section. A rerun after an interruption runs in a
-new session: the claim is still yours when its assignee, branch, and PR match and
-the session it names has stopped; replace that session in the work reference. Do not restart planning, recreate Tasks, or discard a
+new session: the work is still yours when you are its assignee and its branch
+and PR are the ones your assignment names. Do not restart planning, recreate Tasks, or discard a
 candidate. If a GitHub failure left bookkeeping incomplete, report and reconcile
 it. Do not take shared work whose ownership cannot be established.
