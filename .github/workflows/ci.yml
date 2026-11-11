@@ -1,0 +1,27 @@
+# Checks for the orchi-copilot repository itself; Orchi's setup ships plugins/orchi/skills/orchi-core/assets/github/, not this directory.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Install development dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Validate the package
+        run: python tools/validate_package.py
+      - name: Run the tests
+        run: python -m pytest -q
+      - name: Lint documentation links and anchors
+        run: python plugins/orchi/skills/orchi-core/scripts/knowledge.py lint

@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Orchi board</title>
+<style>
+:root{--bg:#fff;--fg:#1f2328;--muted:#6e7781;--line:#e6eaef;--sub:#f6f8fa;--col:#f6f8fa;--red:#cf222e;--orange:#bc4c00;--blue:#0969da;--green:#1a7f37;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#8b949e;--line:#262c36;--sub:#151b23;--col:#11161d;--red:#f85149;--orange:#db6d28;--blue:#4493f8;--green:#3fb950}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/20px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.muted{color:var(--muted)}.c-red{--c:var(--red)}.c-orange{--c:var(--orange)}.c-blue{--c:var(--blue)}.c-green{--c:var(--green)}.c-grey{--c:var(--muted)}
+.dot{display:inline-block;align-self:center;width:8px;height:8px;border-radius:50%;flex:none;background:var(--c)}
+a{color:var(--blue);text-decoration:none;cursor:pointer}
+button{font:inherit;font-size:13px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 12px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--muted)}button.primary{background:var(--green);border-color:var(--green);color:#fff}button.warn{color:var(--orange)}
+button:disabled{opacity:.5;cursor:default}button.small{font-size:12px;padding:1px 10px}
+header{padding:14px 20px 0;border-bottom:1px solid var(--line)}.top{display:flex;align-items:baseline;gap:12px}.top h1{font-size:15px;margin:0;flex:1;font-weight:600}
+.tabs{display:flex;gap:18px;margin-top:10px}.tabs a{padding:6px 0;border-bottom:2px solid transparent;color:var(--muted)}.tabs a.on{border-color:var(--fg);color:var(--fg)}
+main{padding:8px 20px 70px}main.crews{max-width:860px}
+.error{margin:10px 20px 0;padding:8px 12px;border-radius:8px;font-size:13px;color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}
+.sum{font-size:20px;line-height:28px;margin:18px 0 22px}.sum b{font-weight:600}.sum .o{color:var(--orange);font-weight:600}.sum .r{color:var(--red);font-weight:600}
+main.board .sum{font-size:18px;line-height:26px;margin:8px 0 16px}
+.empty{font-size:13px;color:var(--muted);padding:30px 0}
+/* crews */
+.row{display:flex;align-items:center;gap:12px;padding:10px 8px;margin:0 -8px;border-radius:6px;cursor:pointer}.row:hover{background:var(--sub)}
+.row .who{width:190px;flex:none;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row .what{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .age{color:var(--muted);font-size:12px;width:60px;text-align:right;flex:none}.row .st{font-size:12px;color:var(--c);width:90px;flex:none}
+.row+.row{border-top:1px solid var(--line);border-radius:0}
+.foot{margin-top:26px;font-size:13px;color:var(--muted)}
+.badge{font-size:12px;border-radius:10px;padding:0 8px;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);flex:none;white-space:nowrap}
+.back{color:var(--blue);cursor:pointer;font-size:13px;display:inline-block;margin:14px 0 6px}
+.crh{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}.crh h2{font-size:20px;margin:0;font-weight:600}
+.meta{font-size:13px;color:var(--muted)}.meta b{color:var(--fg);font-weight:500}
+.sec{font-size:13px;font-weight:600;color:var(--muted);margin:26px 0 8px;display:flex;gap:8px}
+.qc{border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:12px}.qc.blk{border-left:3px solid var(--orange)}
+.qc h3,.dw h3{font-size:16px;line-height:22px;margin:4px 0 8px;font-weight:600}.tag{font-size:12px;color:var(--muted)}.tag.b{color:var(--orange);font-weight:600}
+.ctx{font-size:13px;background:var(--sub);border-radius:8px;padding:10px 12px;margin:8px 0 12px}.ctx ul{margin:4px 0 0;padding-left:18px}.ctx a{margin-right:12px}
+.plan{margin:6px 0 0;padding-left:18px;font-size:13px}.plan li{margin:3px 0}
+.opt{display:flex;gap:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer}.opt:hover{border-color:var(--muted)}.opt.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.opt .r{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted);margin-top:3px;flex:none}.opt.on .r{border:4px solid var(--blue)}.opt .d{font-size:13px;color:var(--muted)}
+.rec{font-size:11px;color:var(--green);border:1px solid color-mix(in srgb,var(--green) 40%,transparent);border-radius:9px;padding:0 6px;margin-left:6px}
+textarea{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--fg);resize:vertical;min-height:38px;margin-top:4px}
+.send{display:flex;gap:8px;align-items:center;margin-top:10px}.send .muted{font-size:12px;flex:1}
+.hist div{font-size:13px;padding:3px 0;display:flex;gap:10px}.hist .tm{color:var(--muted);width:44px;flex:none}.hist .b{color:var(--orange)}.ok{color:var(--green)}
+.syn{margin-top:30px;padding-top:18px;border-top:1px solid var(--line)}.syn .hd{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}.syn .hd b{font-size:15px;flex:1}.syn .hd span{font-size:12px;color:var(--muted)}
+.syn p{margin:0 0 10px;line-height:22px;max-width:72ch}.syn .ref{color:var(--blue);cursor:pointer;white-space:nowrap}
+/* board */
+.crumbs{font-size:13px;margin:16px 0 0;color:var(--muted)}.crumbs b{color:var(--fg);font-weight:600}
+.kb{display:grid;grid-template-columns:repeat(6,minmax(140px,1fr));gap:8px;overflow-x:auto}
+.cp{background:var(--col);border-radius:10px;padding:8px;min-height:360px;border:1px solid var(--line)}
+.cp.you{border-top:3px solid var(--orange)}.cp.drop{box-shadow:inset 0 0 0 2px var(--blue)}
+.ch{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:2px 4px 10px;display:flex;gap:6px}.cp.you .ch{color:var(--orange)}.ch .n{font-weight:400}
+.k{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-bottom:6px;cursor:pointer;font-size:13px;line-height:18px;box-shadow:0 1px 0 #0000000a}.k:hover{border-color:var(--muted)}
+.k .b{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:12px;color:var(--c)}.k .b .id{color:var(--muted)}.k .b .ic{margin-left:auto;color:var(--orange)}
+.k .b span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k.big .t{font-weight:600}.k .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.bar{display:flex;height:4px;border-radius:2px;overflow:hidden;background:var(--line);margin-top:8px}.bar i{display:block;background:var(--green)}
+.yo{font-size:12px;color:var(--orange);margin-top:6px}
+.k.flash{animation:fl 1.6s ease-out}@keyframes fl{from{box-shadow:0 0 0 3px var(--blue)}to{box-shadow:0 0 0 0 transparent}}
+.dw{max-width:780px}.dh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-top:12px}.dh h2{font-size:20px;margin:0;font-weight:600}
+.path{display:flex;margin:14px 0 4px;font-size:12px;flex-wrap:wrap}.path span{padding:3px 10px;border:1px solid var(--line);color:var(--muted);margin-right:-1px}.path span:first-child{border-radius:12px 0 0 12px}.path span:last-child{border-radius:0 12px 12px 0}.path span.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+ul.l,ol.l{margin:0;padding-left:18px}ul.l li,ol.l li{margin:3px 0}
+.chk{display:flex;gap:8px;font-size:13px;padding:3px 0;color:var(--c)}.chk .mark{width:16px;flex:none;text-align:center}
+.box{background:var(--sub);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:16px}.box .dot{margin-right:6px}
+.acts{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:12px 0;margin-top:24px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+details summary{cursor:pointer}
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bg);border-top:1px solid var(--line);padding:10px 20px;display:none;gap:8px;align-items:center}#bar.on{display:flex}#bar span{flex:1}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><h1 id="repo">Orchi board</h1><span id="updated" class="muted" style="font-size:12px"></span><button id="refresh" class="small">Refresh</button></div>
+  <nav class="tabs"><a id="tab-crews" href="#crews">Crews</a><a id="tab-board" href="#board">Board</a></nav>
+</header>
+<div id="error" class="error" hidden></div>
+<main id="main"><div class="empty">Reading GitHub…</div></main>
+<div id="bar"></div>
+<script>
+"use strict";
+// The board is a view: GitHub state and what Orchi reported. A button or a drop becomes a request to Orchi, sent
+// after a 5 s window in which the user can undo it.
+const $ = (id) => document.getElementById(id);
+const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const plural = (n, word, many = word + "s") => `${n} ${n === 1 ? word : many}`;
+const ORDER = ["ask", "review", "progress", "plan", "backlog", "done"];
+const DEFAULT_COLUMNS = [["plan", "Needs planning"], ["backlog", "Backlog"], ["progress", "In progress"], ["ask", "Questions for you", true], ["review", "Your review", true], ["done", "Done"]].map(([key, title, you]) => ({ key, title, you: !!you }));
+const STATE = { coord: ["grey", "coordinating"], waiting: ["orange", "waits for you"], stuck: ["red", "stuck"], working: ["blue", "working"], background: ["grey", "background"], idle: ["grey", "idle"], free: ["grey", "free"] };
+const CREW_ORDER = Object.keys(STATE);
+const DROPS = { "plan>backlog": ["plan", "Asked Orchi to plan #"], "backlog>progress": ["take", "Asked Orchi to start #"], "progress>backlog": ["defer", "Asked Orchi to defer #"] };
+const UNDO_MS = 5000, MOVE_MS = 3 * 60 * 1000;
+
+let data = null, snap = null, stale = false, flash = null;
+const picks = {}, notes = {}, hidden = new Map(), moved = new Map(), local = [];
+let pending = null;
+
+// ── time ──
+const when = (iso) => { const t = Date.parse(iso || ""); return Number.isNaN(t) ? null : t; };
+function ago(iso) {
+  const t = when(iso); if (t === null) return "";
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (m < 60) return `${m} min`;
+  if (m < 1440) return `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}`;
+  return plural(Math.floor(m / 1440), "day");
+}
+const hm = (iso) => { const t = when(iso); return t === null ? "" : new Date(t).toTimeString().slice(0, 5); };
+
+// ── routes: #crews, #crews/<name>, #board, #board/<group>/<epic|->/<task> ──
+function route() {
+  const parts = location.hash.replace(/^#/, "").split("/").map((part) => decodeURIComponent(part));
+  if (parts[0] === "board") return { tab: "board", group: parts[1] || null, epic: parts[2] && parts[2] !== "-" ? +parts[2] : null, task: parts[3] ? +parts[3] : null };
+  return { tab: "crews", crew: parts[0] === "crews" && parts[1] ? parts[1] : null };
+}
+const link = (...parts) => "#" + parts.map((part) => encodeURIComponent(String(part))).join("/");
+
+// ── data ──
+const columns = () => snap?.board?.columns?.length ? snap.board.columns : DEFAULT_COLUMNS;
+const columnTitle = (key) => (columns().find((column) => column.key === key) || {}).title || key;
+const crews = () => snap?.crews || [];
+const questions = () => (snap?.questions || []).filter((question) => !hidden.has(question.id));
+const questionsOf = (name) => questions().filter((question) => question.crew === name);
+const questionById = (id) => (snap?.questions || []).find((question) => question.id === id);
+const pullOf = (number) => (snap?.pulls || []).find((pull) => pull.number === number);
+function stageOf(card) {
+  const move = moved.get(card.number);
+  return move ? move.to : card.stage;
+}
+function tasks(filter) { return (snap?.board?.tasks || []).filter(filter).map((card) => ({ ...card, stage: stageOf(card), requested: moved.has(card.number) })); }
+const count = (cards, stage) => cards.filter((card) => card.stage === stage).length;
+const aggregate = (cards) => cards.length ? ORDER.find((stage) => count(cards, stage)) : "plan";
+function titleOf(number) {
+  const board = snap?.board || {};
+  const found = [...(board.groups || []), ...(board.epics || []), ...(board.tasks || [])].find((item) => item.number === number);
+  return found ? found.title : "";
+}
+const ref = (number) => number ? `#${number}${titleOf(number) ? " " + titleOf(number) : ""}` : "";
+
+// ── requests ──
+function bar(html, undoable) {
+  const element = $("bar");
+  element.innerHTML = `<span>${html}</span>` + (undoable ? `<button data-undo>Undo</button>` : "");
+  element.classList.add("on");
+  clearTimeout(bar.timer);
+  bar.timer = setTimeout(() => element.classList.remove("on"), undoable ? UNDO_MS : 3000);
+}
+async function post(path, body) {
+  const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  const reply = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(reply.error || response.statusText);
+  return reply;
+}
+// Show the result at once, send it after UNDO_MS, and undo the local change if the user asks or the send fails.
+function request(body, message, apply, revert) {
+  if (pending) flush();
+  apply && apply();
+  const item = { body, revert, timer: setTimeout(() => flush(item), UNDO_MS) };
+  pending = item;
+  bar(esc(message), true);
+  draw();
+}
+async function flush(item = pending) {
+  if (!item || pending !== item) return;
+  clearTimeout(item.timer);
+  pending = null;
+  try { await post("request", item.body); }
+  catch (error) { item.revert && item.revert(); bar("Not sent: " + esc(error.message)); draw(); }
+}
+function undo() {
+  if (!pending) return;
+  clearTimeout(pending.timer);
+  pending.revert && pending.revert();
+  pending = null;
+  $("bar").classList.remove("on");
+  draw();
+}
+function move(card, to, action, message) {
+  request({ action, issue: card.number }, message,
+    () => { moved.set(card.number, { to, from: card.stage, at: Date.now() }); flash = card.number; },
+    () => moved.delete(card.number));
+}
+
+// ── Crews tab ──
+function orchiRow() {
+  const working = crews().filter((crew) => crew.state !== "free").length;
+  return { name: "Orchi", role: "coordinator", state: "coord", doing: `Coordinating ${plural(working, "crew")}`, orchi: true };
+}
+function badge(name) {
+  const list = questionsOf(name);
+  if (!list.length) return "";
+  return `<span class="badge c-${list.some((question) => question.blocking) ? "orange" : "grey"}">${plural(list.length, "question")}</span>`;
+}
+function doing(crew) {
+  return crew.doing || crew.question || (crew.background && "Background: " + crew.background) || crew.stuck || ref(crew.issue) || "";
+}
+function pathOf(number) {
+  const board = snap?.board || {};
+  const task = (board.tasks || []).find((card) => card.number === number) || (board.tasks || []).find((card) => card.pull?.number === number);
+  if (task) return link("board", task.group, groupOf(task.group)?.kind === "Initiative" && task.epic ? task.epic : "-", task.number);
+  const epic = (board.epics || []).find((item) => item.number === number);
+  if (epic) return link("board", epic.group, number);
+  const group = (board.groups || []).find((item) => item.number === number);
+  return group ? link("board", group.key) : "";
+}
+function prose(text) {
+  // Crews by full name or by the short name after their role, e.g. "saved-carts" for "[dev-lead] saved-carts".
+  const names = new Map();
+  for (const crew of [orchiRow(), ...crews()].filter((item) => item.name)) {
+    names.set(esc(crew.name), crew.name);
+    const short = crew.name.replace(/^\[[^\]]*\]\s*/, "");
+    if (short !== crew.name && !names.has(esc(short))) names.set(esc(short), crew.name);
+  }
+  const words = [...names.keys()].sort((a, b) => b.length - a.length).map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return esc(text).replace(new RegExp(`(?<![\\w-])(?:${words.join("|")})(?![\\w-])|#\\d+\\b`, "g"), (match) => {
+    const go = names.has(match) ? link("crews", names.get(match)) : pathOf(+match.slice(1));
+    return go ? `<span class="ref" data-go="${esc(go)}">${match}</span>` : match;
+  });
+}
+function summaryBlock() {
+  const summary = snap?.summary || {};
+  const paragraphs = (summary.paragraphs || []).filter((item) => item && (item.lead || item.text));
+  const head = `<div class="hd"><b>Summary</b><span>${summary.at ? "by Orchi · " + hm(summary.at) : "by Orchi"}</span><button class="small" data-summary>Refresh</button></div>`;
+  if (!paragraphs.length) return `<div class="syn">${head}<div class="muted" style="font-size:13px">Orchi writes the summary here when it reports the pool.</div></div>`;
+  return `<div class="syn">${head}` + paragraphs.map((item) => `<p>${item.lead ? `<b>${prose(item.lead)}</b> ` : ""}${prose(item.text || "")}</p>`).join("") +
+    (summary.since ? `<p class="muted" style="font-size:13px">${prose(summary.since)}</p>` : "") + `</div>`;
+}
+function crewList() {
+  const list = [orchiRow(), ...crews()].sort((a, b) => CREW_ORDER.indexOf(a.state) - CREW_ORDER.indexOf(b.state));
+  const asking = list.filter((crew) => questionsOf(crew.name).length).length;
+  const stuck = crews().filter((crew) => crew.state === "stuck").length;
+  const open = questions().length;
+  let html = `<div class="sum">${crews().length ? plural(crews().length, "crew") + " at work." : "No crews in the pool."}` +
+    (asking ? ` <b class="o">${asking} wait${asking === 1 ? "s" : ""} for your answers</b> <span class="muted" style="font-size:15px">(${plural(open, "question")})</span>` : " Nothing waits for your answers") +
+    (stuck ? `, <b class="r">${stuck} stuck</b>` : "") + ".</div>";
+  html += list.map((crew) => {
+    const [tone, label] = STATE[crew.state] || STATE.idle;
+    return `<div class="row c-${tone}" data-go="${esc(link("crews", crew.name))}"><span class="dot"></span><span class="who">${esc(crew.name)}</span>` +
+      `<span class="what muted">${esc(doing(crew))}</span>${badge(crew.name)}<span class="st">${label}</span><span class="age">${esc(ago(crew.since))}</span></div>`;
+  }).join("");
+  const queue = (snap?.queue || []).map((item) => `#${item.issue} ${esc(item.title || titleOf(item.issue))}${item.action === "plan" ? " (plan)" : ""}`);
+  const busy = crews().filter((crew) => crew.state !== "free").length;
+  const foot = [];
+  if (queue.length) foot.push(`Queued: ${queue.join(", ")}, starts when a crew is free.`);
+  if (snap?.limit) foot.push(`Pool ${busy} of ${snap.limit}.`);
+  if (snap?.mode) foot.push(`Autonomous mode ${snap.mode} · <a data-mode="${snap.mode === "on" ? "off" : "on"}">Turn ${snap.mode === "on" ? "off" : "on"}</a>`);
+  if (foot.length) html += `<div class="foot">${foot.join(" ")}</div>`;
+  return html + summaryBlock();
+}
+function crewPage(name) {
+  const crew = name === "Orchi" ? orchiRow() : crews().find((item) => item.name === name);
+  if (!crew) return `<span class="back" data-go="#crews">← Crews</span><div class="empty">${esc(name)} is no longer in the pool.</div>`;
+  const [tone, label] = STATE[crew.state] || STATE.idle;
+  const path = [...(crew.path || []).map(ref), ref(crew.issue)].filter(Boolean).join(" › ");
+  const pull = crew.pr && pullOf(crew.pr);
+  const meta = [path, crew.pr ? `PR #${crew.pr}${pull ? " · checks " + pull.checks : ""}` : "", crew.branch, crew.runs].filter(Boolean).map(esc);
+  if (!crew.orchi) meta.push(`<a data-open="${esc(crew.name)}">Open session ↗</a>`);
+  let html = `<span class="back" data-go="#crews">← Crews</span><div class="crh"><h2>${esc(crew.name)}</h2><span class="meta">${esc(crew.role || "")}</span>` +
+    `<span class="c-${tone}" style="color:var(--c);font-size:13px">● ${label}${crew.since ? " · " + esc(ago(crew.since)) : ""}</span></div>` +
+    `<div class="meta" style="margin-top:4px">${esc(doing(crew))}</div><div class="meta" style="margin-top:2px">${meta.join(" · ")}</div>`;
+  const list = questionsOf(crew.name);
+  html += list.length ? `<div class="sec">Open questions · ${list.length}</div>` + list.map((question) => `<div class="qc ${question.blocking ? "blk" : ""}">${questionCard(question)}</div>`).join("")
+    : `<div class="sec">Questions</div><div class="muted">No open questions.</div>`;
+  return html + answered(crew.name);
+}
+function answered(name) {
+  const known = new Set((snap?.answered || []).map((entry) => entry.id));
+  const list = [...local.filter((entry) => !known.has(entry.id)), ...(snap?.answered || [])].filter((entry) => entry.crew === name);
+  return `<div class="sec">Answered today · ${list.length}</div><div class="hist">` + (list.map((entry) =>
+    `<div><span class="tm">${esc(hm(entry.at))}</span><span>${esc(entry.text)} → <b>${esc(entry.answer)}</b> · <span class="${entry.picked ? "ok" : "muted"}">${entry.picked ? "picked up" : "sent, not picked up yet"}</span></span></div>`).join("")
+    || '<div class="muted">None yet.</div>') + "</div>";
+}
+
+// ── one question: context, options, note, send ──
+function choicesOf(question) {
+  if (question.choices.length || question.kind !== "plan") return question.choices;
+  return [{ label: "Approve", detail: "Orchi approves the plan in the crew's session.", recommended: false },
+    { label: "Request changes", detail: "Write what to change below.", recommended: false }];
+}
+function context(question) {
+  const lines = question.context || [];
+  const body = lines.length > 1 ? `<ul>${lines.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>` : esc(lines[0] || "");
+  const plan = question.plan?.length ? `<ol class="plan">${question.plan.map((step) => `<li>${esc(step)}</li>`).join("")}</ol>` : "";
+  const links = question.links?.length ? `<div style="margin-top:6px">${question.links.map((item) => /^https?:/.test(item.url) ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">${esc(item.label)} ↗</a>` : `<span class="muted">${esc(item.label)}</span>`).join(" ")}</div>` : "";
+  return body || plan || links ? `<div class="ctx">${body}${plan}${links}</div>` : "";
+}
+function questionCard(question) {
+  const asked = question.asked ? ` · asked ${esc(hm(question.asked))}, ${esc(ago(question.asked))} ago` : "";
+  const head = `<div class="tag ${question.blocking ? "b" : ""}">${question.blocking ? "Blocks work" : `Can wait · going with “${esc(question.assumed)}”`}${asked}</div>` +
+    `<h3>${esc(question.text)}</h3>` + context(question);
+  if (question.kind === "permission") {
+    return head + `<div class="send"><span class="muted">Tool approvals cannot be answered from the board.</span><button class="primary" data-open="${esc(question.crew)}">Open session ↗</button></div>`;
+  }
+  const choices = choicesOf(question);
+  const key = esc(question.id);
+  const pick = choices.length ? picks[question.id] : -1;
+  const by = question.crew === "Orchi" ? "Orchi" : question.crew;
+  let html = head + choices.map((choice, index) => `<div class="opt ${pick === index ? "on" : ""}" data-pick="${key}" data-index="${index}"><span class="r"></span><div><div>${esc(choice.label)}${choice.recommended ? `<span class="rec">recommended by ${esc(by)}</span>` : ""}</div>${choice.detail ? `<div class="d">${esc(choice.detail)}</div>` : ""}</div></div>`).join("");
+  if (choices.length) html += `<div class="opt ${pick === -1 ? "on" : ""}" data-pick="${key}" data-index="-1"><span class="r"></span><div><div>Something else</div><div class="d">Write it below.</div></div></div>`;
+  const placeholder = pick === -1 ? "Your answer" : "Note for the crew (optional)";
+  html += `<textarea data-note="${key}" rows="1" placeholder="${placeholder}">${esc(notes[question.id] || "")}</textarea>`;
+  if (question.kind === "design") html += `<div class="meta" style="margin-top:8px"><a data-design="${esc(question.crew)}">Rate on the design board ↗</a></div>`;
+  const to = question.crew === "Orchi" ? "Goes to Orchi." : `Goes to ${esc(question.crew)} through Orchi.`;
+  return html + `<div class="send"><span class="muted">${pick === undefined ? "Pick an option." : to}</span><button class="primary" data-send="${key}" ${pick === undefined ? "disabled" : ""}>Send answer</button></div>`;
+}
+function sendAnswer(id) {
+  const question = questionById(id);
+  if (!question) return;
+  const choices = choicesOf(question);
+  const pick = choices.length ? picks[id] : -1;
+  const note = (notes[id] || "").trim();
+  if (pick === undefined) return;
+  const choice = pick >= 0 ? choices[pick].label : "";
+  if (!choice && !note) { document.querySelector(`[data-note="${CSS.escape(id)}"]`)?.focus(); return; }
+  let body;
+  if (question.kind === "plan" && !question.choices.length) {
+    if (pick === 0) body = { action: "approve_plan", crew: question.crew, id };
+    else if (!note) { document.querySelector(`[data-note="${CSS.escape(id)}"]`)?.focus(); return; }
+    else body = { action: "change_plan", crew: question.crew, id, text: note };
+  } else {
+    body = { action: "answer_question", crew: question.crew, id, question: question.text, choice, text: choice ? "" : note,
+      note: choice ? note : "", request_id: question.request_id || "" };
+  }
+  const answer = choice || note;
+  const entry = { id, crew: question.crew, text: question.text, answer, at: new Date().toISOString(), picked: false };
+  request(body, `Sent “${answer}” to ${question.crew}.`,
+    () => { hidden.set(id, Date.now()); local.unshift(entry); },
+    () => { hidden.delete(id); local.splice(local.indexOf(entry), 1); });
+}
+
+// ── Board tab ──
+function scoped(cards) {
+  const review = count(cards, "review"), ask = count(cards, "ask"), stuck = cards.filter((card) => card.tone === "red").length;
+  const yours = [review && `<span class="o">${review} wait${review === 1 ? "s" : ""} for your review</span>`, ask && `<span class="o">${plural(ask, "question")} for you</span>`].filter(Boolean);
+  return `<div class="sum">${yours.join(", ") || "Nothing waits for you"}. <b>${count(cards, "progress")} in progress</b>${stuck ? `, ${stuck} stuck` : ""}, ` +
+    `${count(cards, "plan")} need${count(cards, "plan") === 1 ? "s" : ""} planning, ${count(cards, "done")} of ${cards.length} done.</div>`;
+}
+function kanban(items, render, droppable) {
+  return `<div class="kb">` + columns().map((column) => {
+    const inside = items.filter((item) => item.stage === column.key);
+    return `<div class="cp ${column.you && inside.length ? "you" : ""}" data-col="${column.key}" ${droppable ? "data-drop" : ""}><div class="ch">${esc(column.title)}<span class="n">${inside.length}</span></div>${inside.map(render).join("")}</div>`;
+  }).join("") + `</div>`;
+}
+function bigCard(item) {
+  const cards = item.cards, ask = count(cards, "ask"), review = count(cards, "review");
+  const total = item.total ?? cards.length, done = item.done ?? count(cards, "done");
+  const you = [ask && plural(ask, "question"), review && `${review} to review`].filter(Boolean);
+  return `<div class="k big" data-go="${esc(item.go)}"><div class="t">${esc(item.title)}</div><div class="sub">${esc(item.sub)}</div>` +
+    `<div class="bar"><i style="width:${total ? 100 * done / total : 0}%"></i></div>${you.length ? `<div class="yo">${you.join(" · ")} for you</div>` : ""}</div>`;
+}
+function taskCard(card) {
+  const epic = groupOf(card.group)?.kind === "Initiative" && card.epic ? card.epic : "-";
+  const state = card.requested ? "requested…" : card.state;
+  return `<div class="k c-${card.tone}${flash === card.number ? " flash" : ""}" ${card.kind === "PR" ? "" : 'draggable="true"'} data-card="${card.number}" data-go="${esc(link("board", card.group, epic, card.number))}">` +
+    `<div class="t">${esc(card.title)}</div><div class="b"><span class="id">#${card.number}</span><b class="dot"></b><span>${esc(state)}</span>${card.back ? '<span class="ic" title="Back from your review">↩</span>' : ""}</div></div>`;
+}
+function groupOf(key) { return (snap?.board?.groups || []).find((group) => group.key === key); }
+function crumbs(view, group, epic, card) {
+  const parts = [view.group ? `<a href="#board">All Initiatives</a>` : "<b>All Initiatives</b>"];
+  if (group) parts.push(epic || card ? `<a href="${esc(link("board", group.key))}">${esc(group.title)}</a>` : `<b>${esc(group.title)}</b>`);
+  if (epic && group?.kind === "Initiative") parts.push(card ? `<a href="${esc(link("board", group.key, epic.number))}">${esc(epic.title)}</a>` : `<b>${esc(epic.title)}</b>`);
+  if (card) parts.push(`<b>#${card.number}</b>`);
+  return `<div class="crumbs">${parts.join(" › ")}</div>`;
+}
+function boardPage(view) {
+  const board = snap?.board;
+  if (!board) return `<div class="empty">No board yet.</div>`;
+  const group = view.group && groupOf(view.group);
+  if (view.group && !group) return crumbs({}) + `<div class="empty">That group is no longer on the board.</div>`;
+  if (view.task) {
+    const card = tasks((item) => item.number === view.task)[0];
+    if (!card) return crumbs(view, group) + `<div class="empty">#${view.task} is no longer on the board.</div>`;
+    const epic = (board.epics || []).find((item) => item.number === view.epic && item.group === view.group);
+    return crumbs(view, group, epic, card) + taskPage(card);
+  }
+  if (!group) {
+    const all = tasks(() => true);
+    const items = board.groups.map((item) => {
+      const cards = tasks((card) => card.group === item.key);
+      const sub = item.kind === "Outside" ? "Tasks, Explorations, PRs without an Issue" : item.kind === "Epic" ? `Epic #${item.number} · ${progress(item)}` : `#${item.number} · ${plural(item.epics, "Epic")} · ${progress(item)}`;
+      return { ...item, cards, stage: aggregate(cards), sub, go: link("board", item.key) };
+    });
+    return crumbs(view) + scoped(all) + (items.length ? kanban(items, bigCard) : `<div class="empty">No open Initiatives, Epics, or Issues.</div>`);
+  }
+  if (group.kind === "Initiative" && view.epic === null) {
+    const items = (board.epics || []).filter((epic) => epic.group === group.key).map((epic) => {
+      const cards = tasks((card) => card.group === group.key && card.epic === epic.number);
+      return { ...epic, cards, stage: aggregate(cards), sub: `${epic.kind === "Epic" ? "#" + epic.number : epic.kind + " #" + epic.number} · ${progress(epic)}`, go: link("board", group.key, epic.number) };
+    });
+    return crumbs(view, group) + scoped(tasks((card) => card.group === group.key)) + kanban(items, bigCard);
+  }
+  const epic = group.kind === "Initiative" ? (board.epics || []).find((item) => item.number === view.epic && item.group === group.key) : null;
+  const cards = tasks((card) => card.group === group.key && (group.kind !== "Initiative" || card.epic === view.epic));
+  return crumbs(view, group, epic) + scoped(cards) + kanban(cards, taskCard, true);
+}
+function checks(pull) {
+  const [tone, mark, text] = { passing: ["green", "✓", "All checks pass"], failing: ["red", "✗", "Checks fail"], pending: ["orange", "●", "Checks are running"] }[pull.checks] || ["grey", "–", "No checks"];
+  return `<div class="chk c-${tone}" style="margin-top:12px"><span class="mark">${mark}</span>${text}${pull.review === "APPROVED" ? " · approved" : pull.review === "CHANGES_REQUESTED" ? " · changes requested" : ""}</div>`;
+}
+function progress(item) {
+  return item.total ? `${item.done}/${item.total} done` : "no Tasks yet";
+}
+function historyBlock(card) {
+  if (!card.history?.length) return "";
+  return `<details><summary class="sec">History</summary><div class="hist">` + card.history.map((entry) => {
+    const text = entry.text || (entry.to ? `${entry.back ? "← " : "→ "}${columnTitle(entry.to)}${entry.note ? ": " + entry.note : ""}` : entry.note);
+    return `<div><span class="tm">${esc(hm(entry.at))}</span><span class="${entry.back ? "b" : ""}">${esc(text)}</span></div>`;
+  }).join("") + `</div></details>`;
+}
+function taskPage(card) {
+  const crew = card.crew ? `<b>${esc(card.crew)}</b> · <a data-open="${esc(card.crew)}">Open session ↗</a>` : "no crew yet";
+  let html = `<div class="dw"><div class="dh"><h2>${esc(card.title)}</h2><a class="muted" href="${esc(card.url || "")}" target="_blank" rel="noopener">#${card.number} ↗</a></div>` +
+    `<div class="meta">${card.kind} · ${crew}</div><div class="path">${columns().map((column) => `<span class="${column.key === card.stage ? "on" : ""}">${esc(column.title)}</span>`).join("")}</div>`;
+  const asked = (card.questions || []).map(questionById).filter(Boolean);
+  const question = asked.find((item) => item.kind === card.detail) || asked[0];
+  const pull = card.pull;
+  const detail = card.requested ? "requested" : card.detail;
+  if ((detail === "pr" || detail === "merge") && pull) {
+    html += `<div class="sec">What changed</div>` + (pull.changes?.length ? `<ul class="l">${pull.changes.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>` : `<div class="muted">${esc(pull.title)}</div>`) +
+      checks(pull) + `<div class="meta" style="margin-top:12px">+${pull.additions ?? 0} −${pull.deletions ?? 0} in ${plural(pull.files ?? 0, "file")} · <a href="${esc(pull.url)}/files" target="_blank" rel="noopener">Open the diff ↗</a></div>` +
+      historyBlock(card) + `<div id="changes"></div><div class="acts"><button class="primary" data-merge="${pull.number}">Approve and merge</button><button data-changes="${pull.number}">Request changes</button></div>`;
+  } else if (detail === "plan" && question) {
+    html += `<h3 style="margin-top:16px">${esc(question.text)}</h3>${context(question)}` + historyBlock(card) +
+      `<div id="changes"></div><div class="acts"><button class="primary" data-approve="${esc(question.id)}">Approve plan</button><button data-replan="${esc(question.id)}">Ask for changes</button></div>`;
+  } else if (detail === "design" && question) {
+    html += `<div class="box">${esc(question.text)}</div>${context(question)}` + historyBlock(card) + `<div class="acts"><button class="primary" data-design="${esc(question.crew)}">Rate on the design board ↗</button></div>`;
+  } else if ((detail === "question" || detail === "merge") && question) {
+    html += `<div style="margin-top:16px">${questionCard(question)}</div>` + historyBlock(card);
+  } else if (detail === "permission" && question) {
+    html += `<div class="box">${esc(question.text)}<br><span class="muted">Answered only in the crew's session.</span></div>` + historyBlock(card) + `<div class="acts"><button class="primary" data-open="${esc(question.crew)}">Open session ↗</button></div>`;
+  } else if (detail === "run") {
+    html += `<div class="box c-${card.tone}"><b class="dot"></b>${esc(card.state)}</div>` + (pull ? `<div class="meta" style="margin-top:8px">PR <a href="${esc(pull.url)}" target="_blank" rel="noopener">#${pull.number}</a>${pull.draft ? " · draft" : ""} · checks ${esc(pull.checks)}</div>` : "") +
+      historyBlock(card) + `<div class="acts">${card.crew ? `<button data-status="${esc(card.crew)}">Status</button>` : ""}<button data-defer="${card.number}">Defer</button></div>`;
+  } else if (card.stage === "plan") {
+    html += `<div class="box">Not planned yet.</div>` + historyBlock(card) + `<div class="acts"><button class="primary" data-plan="${card.number}">Plan it</button><button data-defer="${card.number}">Defer</button></div>`;
+  } else if (card.stage === "backlog") {
+    html += `<div class="box">${esc(card.state)}.</div>` + historyBlock(card) + `<div class="acts">${card.deferred ? `<button class="primary" data-resume="${card.number}">Resume</button>` : `<button class="primary" data-take="${card.number}">Start now</button>`}</div>`;
+  } else {
+    html += `<div class="box c-${card.tone}"><b class="dot"></b>${esc(card.requested ? "Requested; Orchi moves the card when the work gets there." : card.state)}</div>` + historyBlock(card);
+  }
+  return html + "</div>";
+}
+function feedback(placeholder, attribute, value) {
+  $("changes").innerHTML = `<textarea id="feedback" rows="3" placeholder="${placeholder}"></textarea><div style="margin-top:8px"><button class="warn" ${attribute}="${esc(value)}">Send back</button></div>`;
+  $("feedback").focus();
+}
+
+// ── drawing ──
+function draw() {
+  if (document.activeElement?.tagName === "TEXTAREA" && document.activeElement.id !== "feedback" && !pending) { stale = true; return; }
+  stale = false;
+  const view = route();
+  $("tab-crews").classList.toggle("on", view.tab === "crews");
+  $("tab-board").classList.toggle("on", view.tab === "board");
+  const main = $("main");
+  main.className = view.tab;
+  if (!snap) main.innerHTML = `<div class="empty">${data?.refreshing || !data ? "Reading GitHub…" : "No snapshot yet."}</div>`;
+  else main.innerHTML = view.tab === "board" ? boardPage(view) : view.crew ? crewPage(view.crew) : crewList();
+  flash = null;
+  header();
+}
+function header() {
+  $("repo").textContent = data?.repository || "Orchi board";
+  $("updated").textContent = data?.refreshing ? "refreshing…" : snap?.updated ? `updated ${ago(snap.updated) === "0 min" ? "just now" : ago(snap.updated) + " ago"}` : "";
+  const error = data?.error || snap?.error;
+  $("error").hidden = !error;
+  $("error").textContent = error ? "The board could not read GitHub: " + error : "";
+}
+function settle() {
+  const now = Date.now();
+  for (const [id, at] of hidden) if (!questionById(id) || now - at > MOVE_MS) hidden.delete(id);
+  for (const [number, entry] of moved) {
+    const card = (snap?.board?.tasks || []).find((item) => item.number === number);
+    if (!card || card.stage !== entry.from || now - entry.at > MOVE_MS) moved.delete(number);
+  }
+  const known = new Set((snap?.answered || []).map((entry) => entry.id));
+  for (let i = local.length - 1; i >= 0; i--) if (known.has(local[i].id)) local.splice(i, 1);
+}
+async function load() {
+  try {
+    data = await (await fetch("state")).json();
+    snap = data.snapshot && !data.snapshot.error ? data.snapshot : snap;
+    if (data.snapshot?.error) data.error = data.error || data.snapshot.error;
+    settle();
+    draw();
+  } catch (error) {
+    $("error").hidden = false;
+    $("error").textContent = "The board lost its extension: " + error.message;
+  }
+}
+
+// ── events ──
+document.addEventListener("click", (event) => {
+  const at = (selector) => event.target.closest(selector);
+  let element;
+  if ((element = at("[data-undo]"))) return undo();
+  if ((element = at("[data-pick]"))) { picks[element.dataset.pick] = +element.dataset.index; draw(); if (+element.dataset.index === -1) document.querySelector(`[data-note="${CSS.escape(element.dataset.pick)}"]`)?.focus(); return; }
+  if ((element = at("[data-send]"))) return sendAnswer(element.dataset.send);
+  if ((element = at("[data-open]"))) return request({ action: "open", crew: element.dataset.open }, `Asked Orchi to open ${element.dataset.open}.`);
+  if ((element = at("[data-design]"))) return request({ action: "design", crew: element.dataset.design }, "Asked Orchi to open the design board.");
+  if ((element = at("[data-status]"))) return request({ action: "status", crew: element.dataset.status }, `Asked ${element.dataset.status} for its status.`);
+  if ((element = at("[data-summary]"))) return request({ action: "summary" }, "Asked Orchi to rewrite the summary.");
+  if ((element = at("[data-mode]"))) return request({ action: "mode", to: element.dataset.mode }, `Asked Orchi to turn autonomous mode ${element.dataset.mode}.`);
+  const card = (number) => tasks((item) => item.number === +number)[0];
+  if ((element = at("[data-merge]"))) {
+    const number = +element.dataset.merge, c = tasks((item) => item.pull?.number === number)[0];
+    return request({ action: "merge", pull: number }, `Merge requested for PR #${number}.`,
+      () => c && moved.set(c.number, { to: "done", from: c.stage, at: Date.now() }), () => c && moved.delete(c.number));
+  }
+  if ((element = at("[data-changes]"))) return feedback("What should change?", "data-sendback", element.dataset.changes);
+  if ((element = at("[data-sendback]"))) {
+    const text = $("feedback").value.trim(); if (!text) return $("feedback").focus();
+    const number = +element.dataset.sendback, c = tasks((item) => item.pull?.number === number)[0];
+    return request({ action: "request_changes", pull: number, text }, "Sent back to the crew.",
+      () => c && moved.set(c.number, { to: "progress", from: c.stage, at: Date.now() }), () => c && moved.delete(c.number));
+  }
+  if ((element = at("[data-approve]"))) { const q = questionById(element.dataset.approve); const c = route().task && card(route().task);
+    return request({ action: "approve_plan", crew: q.crew, id: q.id }, "Plan approved.", () => { hidden.set(q.id, Date.now()); c && moved.set(c.number, { to: "progress", from: c.stage, at: Date.now() }); }, () => { hidden.delete(q.id); c && moved.delete(c.number); }); }
+  if ((element = at("[data-replan]"))) return feedback("What should change in the plan?", "data-sendplan", element.dataset.replan);
+  if ((element = at("[data-sendplan]"))) {
+    const text = $("feedback").value.trim(); if (!text) return $("feedback").focus();
+    const q = questionById(element.dataset.sendplan);
+    return request({ action: "change_plan", crew: q.crew, id: q.id, text }, "Sent back to the crew.", () => hidden.set(q.id, Date.now()), () => hidden.delete(q.id));
+  }
+  for (const [attribute, action, to, message] of [["plan", "plan", "backlog", "Asked Orchi to plan #"], ["take", "take", "progress", "Asked Orchi to start #"], ["defer", "defer", "backlog", "Asked Orchi to defer #"], ["resume", "resume", "backlog", "Asked Orchi to resume #"]]) {
+    if ((element = at(`[data-${attribute}]`))) { const c = card(element.dataset[attribute]); return c && move(c, to, action, message + c.number + "."); }
+  }
+  if ((element = at("[data-go]")) && !at("a[href]")) { location.hash = element.dataset.go; return; }
+});
+document.addEventListener("input", (event) => { if (event.target.dataset?.note !== undefined) notes[event.target.dataset.note] = event.target.value; });
+document.addEventListener("focusout", () => setTimeout(() => stale && draw(), 0));
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (pending) return undo();
+  const view = route();
+  if (view.tab === "crews" && view.crew) location.hash = "#crews";
+  else if (view.tab === "board" && view.task) location.hash = link("board", view.group, ...(view.epic ? [view.epic] : []));
+  else if (view.tab === "board" && view.epic) location.hash = link("board", view.group);
+  else if (view.tab === "board" && view.group) location.hash = "#board";
+});
+let dragged = null;
+document.addEventListener("dragstart", (event) => { const element = event.target.closest?.("[data-card]"); dragged = element ? +element.dataset.card : null; });
+document.addEventListener("dragover", (event) => { const column = event.target.closest?.("[data-drop]"); if (dragged && column) { event.preventDefault(); column.classList.add("drop"); } });
+document.addEventListener("dragleave", (event) => event.target.closest?.("[data-drop]")?.classList.remove("drop"));
+document.addEventListener("drop", (event) => {
+  const column = event.target.closest?.("[data-drop]");
+  if (!column || !dragged) return;
+  event.preventDefault();
+  column.classList.remove("drop");
+  const card = tasks((item) => item.number === dragged)[0];
+  dragged = null;
+  if (!card || card.stage === column.dataset.col) return;
+  const rule = DROPS[`${card.stage}>${column.dataset.col}`];
+  if (rule) move(card, column.dataset.col, rule[0], rule[1] + card.number + ".");
+  else bar("Orchi moves this card when the work gets there.");
+});
+window.addEventListener("hashchange", () => { draw(); window.scrollTo(0, 0); });
+$("refresh").onclick = async () => { $("updated").textContent = "refreshing…"; await post("refresh").catch(() => {}); };
+if (typeof EventSource === "function") new EventSource("events").onmessage = load;
+setInterval(() => snap && !pending && draw(), 60000);
+load();
+</script>
+</body>
+</html>

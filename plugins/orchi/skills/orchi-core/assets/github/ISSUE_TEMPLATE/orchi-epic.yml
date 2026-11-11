@@ -1,0 +1,102 @@
+name: Orchi Epic
+description: An independently verifiable outcome delivered as sequential Tasks on one branch and PR.
+title: "[INITIATIVE][TAG] "
+labels: [Epic]
+body:
+  - type: markdown
+    attributes:
+      value: "Start the title with the Initiative tag and this Epic's own tag, for example [PAY][TOKEN] Tokenize stored cards. A standalone Epic uses only its own tag: [CSV] Export orders as CSV. Write it for an agent owner who has not seen the planning conversation: self-contained, concrete, and in plain language the user can also read and approve. A future Epic in an Initiative may answer a field with 'Deferred until #<n>: <reason>' only when the decision depends on that predecessor's result; see the Epic readiness checklist in Orchi's readiness reference (and the repository's own rules)."
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: The bounded result, not a list of components.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: Authoritative documents, exact sections, and stable requirement/decision IDs; the parent Initiative when applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Context and current state
+      description: Why this outcome is needed and where it fits; evidence of the relevant current implementation (files, symbols, behavior) and the change needed.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: In scope and out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: Numbered requirements (R1, R2, ...) this Epic delivers, one per line, each traceable to a source or a recorded decision.
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design
+      description: Approach, domain and interface decisions, data and ownership boundaries, invariants, test seams (where tests go and what each catches), and tradeoffs - and why this approach was chosen over the alternatives considered - or a link to them. State explicitly when there is no architecture change.
+    validations:
+      required: true
+  - type: textarea
+    id: ui
+    attributes:
+      label: UI design
+      description: For an Epic that changes a user interface - its design depth (none, brief, or Epic); the surface brief link at depth brief; for a design Epic, the surfaces it designs, what must stay, and whether it replaces DESIGN.md; or the design Epic it is blocked by. Write "No user interface change" otherwise.
+    validations:
+      required: false
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Decisions
+      description: Each decision that shapes this Epic - the question, the answer, who decided (the user, or the main session under a cited user delegation), the date, and the reason. Quote the user's answers faithfully.
+    validations:
+      required: true
+  - type: textarea
+    id: surfaces
+    attributes:
+      label: Affected surfaces
+      description: Code, schema, contract, test, and documentation areas expected to change.
+    validations:
+      required: true
+  - type: textarea
+    id: failure
+    attributes:
+      label: Failure and recovery
+      description: Success and failure scenarios, inputs and outputs, risks, and the expected recovery behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: branch
+    attributes:
+      label: Branch and PR
+      description: The Epic branch and the PR target (the Initiative branch, or main for a standalone Epic). Record dependencies as native blocked-by relationships (in a new project, on its first run, except for a design Epic), and add the Tasks in execution order as native sub-issues.
+    validations:
+      required: true
+  - type: textarea
+    id: exit
+    attributes:
+      label: Exit criteria
+      description: Observable acceptance mapped to requirements (R1 -> ...), each with its verification.
+    validations:
+      required: true
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open questions
+      description: Unresolved inputs, not presented as decided facts. Mark any question that affects the approach; the Epic is not ready for delivery until it is resolved.
+  - type: textarea
+    id: work
+    attributes:
+      label: Work reference
+      description: Filled by the owner on claim - assistant session or identifier, branch, and PR.

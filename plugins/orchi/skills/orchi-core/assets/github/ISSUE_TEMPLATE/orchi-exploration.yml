@@ -1,0 +1,87 @@
+name: Orchi Exploration
+description: An idea being researched and shaped with the user before any scope is planned.
+title: "Explore: "
+labels: [Exploration]
+body:
+  - type: markdown
+    attributes:
+      value: "An exploration produces decisions, not code; Orchi's exploration reference defines its phases. Keep this body as the current map: write research findings and options as files in docs/work/<slug>/ on the explore/<slug> branch and link them here, and link prototype branches, which are never merged. When the user confirms the shape, the researcher crew continues into planning with this Issue; planning takes these decisions as agreed, so write them for a planner who has not seen the exploration conversation."
+  - type: textarea
+    id: destination
+    attributes:
+      label: Destination
+      description: What is being decided, what the end of this exploration looks like, and how much the outcome is worth (Task, Epic, or Initiative size) and any time limit.
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: Original request
+      description: The idea in the user's words, kept distinct from later decisions.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and no-gos
+      description: Fixed limits, and what is explicitly out of scope (the exclusions).
+  - type: textarea
+    id: stack
+    attributes:
+      label: Stack
+      description: For a new product - who uses it and on which devices, where it must run and what is mandated, how sensitive its data is, the hosting budget, and whether it is a proof of concept or meant to last; then the stack Orchi's standards defaults derive from them, with reasons. Leave empty otherwise.
+    validations:
+      required: false
+  - type: textarea
+    id: options
+    attributes:
+      label: Options
+      description: Each direction considered - its shape, what it makes easy and hard, links to the research files it rests on - and the verdict with its reason.
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Decisions
+      description: Each decision with an id (D1, D2, ...) - the question, the answer, who decided, the date, the reason, and the area of the product it concerns. Quote the user's answers faithfully.
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: Numbered requirements (R1, R2, ...) of the chosen direction, each observable at completion.
+  - type: textarea
+    id: design
+    attributes:
+      label: Design
+      description: For a product with a user interface - the screen map, the approved wireframe of each key screen, the references, the design engine, the approved comp, and the clickable mockup, each linked to its file in the working folder's design/, and the design board's link. Leave empty otherwise.
+    validations:
+      required: false
+  - type: textarea
+    id: shape
+    attributes:
+      label: Shape
+      description: The chosen direction, and candidate Epics as outcomes, each with the result or contract it supplies to the next (the dependency between Epics).
+  - type: textarea
+    id: product
+    attributes:
+      label: Product
+      description: For a product with a user interface - the primary users and their situation, the purpose and the mechanism no competitor shares, positioning, platform, stack (from the Stack field), constraints, brand commitments, evidence, and accessibility level (WCAG 2.2 AA unless the user says otherwise), for the first design Epic to record in PRODUCT.md. Leave empty otherwise.
+    validations:
+      required: false
+  - type: textarea
+    id: ideas
+    attributes:
+      label: Ideas
+      description: Every idea the user raised and parked, and every direction, variant, or remark they turned down, each with why, so planning loses none.
+    validations:
+      required: false
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open questions
+      description: What is still open, each with what it blocks, the next one to ask first; list questions that can only be sensed so far as such.
+  - type: textarea
+    id: work
+    attributes:
+      label: Work reference
+      description: The claim while someone holds this - the assignee's session or identifier, the branch, and the PR; in a pool, Orchi's `Assigned to crew-<k> (<session id>) by <Orchi> on <date>` line.
+    validations:
+      required: false

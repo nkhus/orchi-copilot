@@ -1,0 +1,107 @@
+name: Orchi Task
+description: One reviewable result, either inside an Epic or as a standalone fix.
+title: "[INITIATIVE][EPIC] "
+labels: [Task]
+body:
+  - type: markdown
+    attributes:
+      value: "Start the title with the same tags as the parent Epic, for example [PAY][TOKEN] Add token column, or [CSV] Add export endpoint under a standalone Epic. A standalone fix has no tags. The Task must pass the Task readiness checklist in Orchi's readiness reference (and the repository's own rules) before anyone starts it. Write it for an agent owner who has not seen the planning conversation: self-contained, concrete, and in plain language the user can also read and approve."
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: The one reviewable result this Task owns. Set the parent Epic as a native sub-issue relationship.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why this result is needed and where it fits in the product or system; the relevant current behavior with code evidence (files and symbols, or path:line); and what later Tasks, Epics, or users consume from it (a contract, table, route, document section).
+    validations:
+      required: true
+  - type: textarea
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Results that must already exist on the working branch, with Task or Epic references, or "None".
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: Numbered requirements (R1, R2, ...), one per line, each individually verifiable. Use "must" and "must not", and cite the stable requirement IDs they implement when the project has them.
+    validations:
+      required: true
+  - type: textarea
+    id: vision
+    attributes:
+      label: Solution vision
+      description: The intended approach and the likely change points - code symbols, routes, migrations, tables, contracts, tests, and documentation - and why this approach was chosen over the alternatives considered. Guidance for the owner, not a permission list.
+    validations:
+      required: true
+  - type: textarea
+    id: ui
+    attributes:
+      label: UI design
+      description: For a Task that changes a user interface - the design depth (none, brief, or Epic), the design engine (Hallmark or prototype, as DESIGN.md names it), the DESIGN.md sections it follows, the surface brief and the approved comp it builds against, and the states, breakpoints, themes, and accessibility level it covers. Write "No user interface change" otherwise.
+    validations:
+      required: false
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Decisions
+      description: Each decision that shapes this Task - the question, the answer, who decided (the user, or the main session under a cited user delegation), the date, and the reason. Quote the user's answers faithfully. Write "None needed" if nothing had to be decided.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: Exact design sections, documents, requirement/decision IDs, and the code or issues inspected while planning. Link sections, not whole documents.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and non-goals
+      description: Invariants, boundaries, and what this Task must not change or attempt.
+    validations:
+      required: true
+  - type: textarea
+    id: scenarios
+    attributes:
+      label: Scenarios
+      description: Concrete success scenarios and failure scenarios (invalid input, missing data, conflicts, unavailable dependencies) with the expected behavior of each. For a defect, the reproduction command that has already failed on the reported symptom, or why none exists and which evidence replaces it.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance and verification
+      description: Observable behavior mapped to the requirements (R1 -> ...), the exact checks or commands that establish it, and the seams where new tests go, with an existing test to follow. State user-facing behavior as what a user can see or do, each with its acceptance test (until the acceptance harness lands, and in a proof of concept, what the running app shows); take the checks from ENGINEERING.md when it exists.
+    validations:
+      required: true
+  - type: textarea
+    id: docs
+    attributes:
+      label: Documentation impact
+      description: Owning pages to update (per the project's documentation routing - the ownership map in docs/README.md by default), including a behavior page for a change a user can see, or why no documentation changes.
+    validations:
+      required: true
+  - type: textarea
+    id: writer
+    attributes:
+      label: Suggested writer
+      description: Optional. Whether the change is small and fully determined by this Issue (orchi-fixer) or needs orchi-implementer, and why. The delivering session makes the final choice.
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open questions
+      description: Unresolved inputs, not presented as decided facts. Resolve any question that affects this Task's approach, or move it to a bounded investigation Task, before anyone starts it.
+  - type: textarea
+    id: work
+    attributes:
+      label: Work reference
+      description: For a standalone Task, filled by the owner on claim - assistant session or identifier, branch, and PR.

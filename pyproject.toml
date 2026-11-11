@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+pythonpath = ["plugins/orchi/skills/orchi-core/scripts"]
+testpaths = ["tests"]
+addopts = "-ra"

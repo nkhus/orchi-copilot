@@ -1,0 +1,64 @@
+name: Orchi Initiative
+description: A request decomposed into Epics on an initiative branch.
+title: "[TAG] "
+labels: [Initiative]
+body:
+  - type: markdown
+    attributes:
+      value: "Replace TAG with this Initiative's own tag: 2-8 uppercase letters or digits that no other issue uses, for example [PAY] Card payments. Together with its plan document, the Initiative must pass the Initiative readiness checklist in Orchi's readiness reference before its first Epic starts. Write it for agent owners who have not seen the planning conversation."
+  - type: textarea
+    id: request
+    attributes:
+      label: Original request
+      description: The request as agreed with the requester, kept distinct from later decisions.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Agreed outcome
+      description: Observable result and explicit exclusions.
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: Numbered requirements (R1, R2, ...), one per line, each observable at completion.
+    validations:
+      required: true
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Decisions
+      description: Each decision that shapes this Initiative - the question, the answer, who decided (the user, or the main session under a cited user delegation), the date, and the reason. Quote the user's answers faithfully.
+    validations:
+      required: true
+  - type: textarea
+    id: epics
+    attributes:
+      label: Epic map
+      description: Which Epic delivers each requirement, and each dependency between Epics explained through the result or contract it supplies. Epics themselves are native sub-issues.
+    validations:
+      required: true
+  - type: textarea
+    id: completion
+    attributes:
+      label: Integration and completion
+      description: The integration branch, the completion criteria, and the final verification on the combined candidate.
+    validations:
+      required: true
+  - type: input
+    id: plan
+    attributes:
+      label: Plan
+      description: Link to the working folder's plan, docs/work/<tag>-<slug>/README.md, on the initiative/<tag>-<slug> branch.
+    validations:
+      required: true
+  - type: textarea
+    id: work
+    attributes:
+      label: Work reference
+      description: The claim while someone holds this - the assignee's session or identifier, the branch, and the PR; in a pool, Orchi's `Assigned to crew-<k> (<session id>) by <Orchi> on <date>` line.
+    validations:
+      required: false
