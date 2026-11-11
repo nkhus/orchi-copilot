@@ -45,10 +45,10 @@ copilot plugin install orchi@orchi-copilot
 
 **4. Type `/orchi`** in the Project's conversation, with your first request if
 you have one. From then on that conversation is Orchi; just talk to it. On
-its first turn it prepares the repository: the type labels, a PR template
-section, the documentation and standards checks, and a development-rules
-section in `AGENTS.md`, none of which names Orchi, in one setup PR for you to
-merge. You don't commit or push anything. From then on, tell Orchi what you want; it
+its first turn it prepares the repository: a PR template section, the
+documentation and standards checks, and a development-rules section in
+`AGENTS.md`, none of which names Orchi or prescribes how work is tracked, in
+one setup PR for you to merge. You don't commit or push anything. From then on, tell Orchi what you want; it
 starts a crew session for each request and archives it when the work is done.
 
 > **Needs** Git, a GitHub remote, an authenticated GitHub CLI (`gh`), and
@@ -224,7 +224,6 @@ Issues, push, or merge. See [roles](plugins/orchi/skills/orchi-core/references/r
 | PR template | A managed section: Summary, Verification, and Documentation impact |
 | `.github/workflows/docs-check.yml`, `standards-check.yml` | The documentation and standards checks on pull requests |
 | `.github/scripts/` | Copies of `knowledge.py` and `standards.py` that the workflows run |
-| Labels | The type labels `Initiative`, `Epic`, and `Task` |
 
 None of these files names Orchi; the Issue forms and Orchi's workflow stay in the
 plugin. Orchi commits them on `chore/repository-setup` and opens a PR for you

@@ -1,6 +1,6 @@
 ## Summary
 
-<!-- What changed and why. Link issues; closing keywords only work for PRs into the default branch. -->
+<!-- What changed and why. -->
 
 ## Verification
 

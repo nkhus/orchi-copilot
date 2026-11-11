@@ -55,7 +55,7 @@ At design depth brief, agree the references and the surface brief with the user 
 
 First [agree the breakdown](../orchi-core/references/planning.md#agree-the-breakdown) as that section says; create no Issue
 before then. Then follow the Orchi [planning](../orchi-core/references/planning.md) and [GitHub](../orchi-core/references/github.md)
-references for titles, tags, labels, branches, and native relationships.
+references for titles, tags, labels (create a missing type label first), branches, and native relationships.
 
 - **Task:** one Issue, its body built from the
   [Task form](../orchi-core/assets/issues/task.yml).

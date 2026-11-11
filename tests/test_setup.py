@@ -82,6 +82,8 @@ def test_the_written_footprint_is_neutral(repo):
     assert ".github/scripts/knowledge.py" in workflows and ".github/scripts/standards.py" in workflows
     assert "knowledge.py work" not in workflows and "schedule" not in workflows and "issues: write" not in workflows
     assert "## Development rules" in files["AGENTS.md"] and "## Summary" in files[".github/pull_request_template.md"]
+    for path in ("AGENTS.md", ".github/pull_request_template.md"):
+        assert "issue" not in files[path].casefold(), path
     assert excluded(repo).count(".orchi-tmp/") == 1
     assert git("check-ignore", "-q", ".orchi-tmp/x", cwd=repo) == ""
 
@@ -122,6 +124,32 @@ def test_edited_section_is_refused_until_replace(repo):
     assert snapshot(repo) == edited
     assert run(repo, "--replace").returncode == 0
     assert "Agree everything" not in agents.read_text()
+
+
+OLD_RULES = """## Development rules
+
+- Agree the outcome, approach, and scope with whoever asked before creating branches, Issues, or changes.
+- Track work in GitHub Issues and pull requests; resume from the existing Issue, branch, and PR instead of starting over.
+- An Issue with an assignee, a linked pull request, or a linked branch is taken: leave it to its owner unless they hand it over.
+- Where `ENGINEERING.md` exists, follow it and run its checks; never weaken a check without recording an exception there.
+- Update the documentation in the same change as the code: `docs/README.md`, when present, maps the pages, and every pull request fills its Documentation impact section.
+- Do not infer permission to merge or deploy from permission to implement."""
+
+
+def test_sections_that_prescribed_issues_are_updated(repo):
+    pr_body = (ASSETS / "github/pull_request_template.md").read_text().strip("\n").replace(
+        "<!-- What changed and why. -->",
+        "<!-- What changed and why. Link issues; closing keywords only work for PRs into the default branch. -->")
+    (repo / "AGENTS.md").write_text(f"# Agents\n\n{setup.START}\n{OLD_RULES}\n{setup.END}\n")
+    (repo / ".github").mkdir()
+    (repo / ".github/pull_request_template.md").write_text(f"{setup.START}\n{pr_body}\n{setup.END}\n")
+    result = run(repo)
+    assert result.returncode == 0, result.stderr
+    assert "Update the section of AGENTS.md" in result.stdout
+    assert "Update the section of .github/pull_request_template.md" in result.stdout
+    for path in ("AGENTS.md", ".github/pull_request_template.md"):
+        assert "issue" not in (repo / path).read_text().casefold(), path
+    assert run(repo).stdout.strip() == "Nothing to change."
 
 
 def test_a_version_setup_shipped_before_is_updated(repo, monkeypatch):
@@ -236,7 +264,7 @@ def fake_github(labels, issues, calls):
     return gh
 
 
-def test_labels_keep_only_the_neutral_types(repo, monkeypatch):
+def test_labels_are_migrated_but_never_created(repo, monkeypatch):
     calls = []
     labels = [{"name": "Epic", "description": "Orchi: an outcome decomposed into Tasks"},
               {"name": "Task", "description": "Ours"},
@@ -253,8 +281,7 @@ def test_labels_keep_only_the_neutral_types(repo, monkeypatch):
     setup.apply(plan)
     writes = [args for args in calls if args[:2] not in {("label", "list"), ("issue", "list")}]
     assert writes == [
-        ("label", "create", "Initiative", "--color", "5319e7", "--description", setup.LABELS["Initiative"][1]),
-        ("label", "edit", "Epic", "--description", setup.LABELS["Epic"][1]),
+        ("label", "edit", "Epic", "--description", setup.TYPE_LABELS["Epic"]),
         ("issue", "edit", "3", "--add-assignee", "@me"),
         ("label", "delete", "in-progress", "--yes"),
         ("issue", "edit", "5", "--title", "Explore: Payments"),
@@ -262,8 +289,10 @@ def test_labels_keep_only_the_neutral_types(repo, monkeypatch):
         ("label", "delete", "retro", "--yes"),
     ]
     assert any("needs-planning was changed" in note for note in plan.notes)
-    assert set(setup.LABELS) == {"Initiative", "Epic", "Task"}
-    assert not any(description.startswith("Orchi") for _, description in setup.LABELS.values())
+    assert not any(description.startswith("Orchi") for description in setup.TYPE_LABELS.values())
+    guidance = (SCRIPTS.parent / "references/github.md").read_text()
+    for name, description in setup.TYPE_LABELS.items():
+        assert f'gh label create {name} --color' in guidance and f'--description "{description}"' in guidance
 
 
 def test_unavailable_github_is_reported_not_fatal(repo, monkeypatch):
