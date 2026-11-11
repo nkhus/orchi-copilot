@@ -13,6 +13,7 @@ and keep the decisions still in force.
 | [`docs/workflow.md`](workflow.md) | The core workflow: exploration, planning, delivery, review, subagent roles, Issue forms |
 | [`docs/pool.md`](pool.md) | Orchi as a Copilot Project, crews as child sessions, messages, autonomous mode, release |
 | [`docs/design.md`](design.md) | User interface design: the design track, the `design` Epic, and the designer agent |
+| [`docs/canvases.md`](canvases.md) | The plugin's canvases: the Orchi board, the design board, and the Browser canvas |
 | [`docs/standards.md`](standards.md) | Engineering standards: `ENGINEERING.md`, the default stack and checks, gate integrity |
 | [`docs/context.md`](context.md) | Project context: current documentation, working documents, the ownership map and its checks |
 | [`docs/installation.md`](installation.md) | Installing, updating, and removing the plugin; repository setup; packaging decisions |
@@ -46,6 +47,9 @@ and keep the decisions still in force.
 | `plugins/orchi/skills/orchi-core/references/pool.md` | `docs/pool.md` | Pool |
 | `plugins/orchi/skills/orchi-design/**` | `docs/design.md` | Design |
 | `plugins/orchi/agents/orchi-designer.agent.md` | `docs/design.md` | Design |
+| `plugins/orchi/extensions/**` | `docs/canvases.md`, `docs/installation.md` | Canvases |
+| `plugins/orchi/skills/orchi-core/references/canvases.md` | `docs/canvases.md`, `docs/design.md` | Canvases |
+| `plugins/orchi/skills/orchi-core/scripts/board.py` | `docs/canvases.md` | Canvases |
 | `plugins/orchi/skills/orchi-standards/**` | `docs/standards.md` | Standards |
 | `plugins/orchi/skills/orchi-core/references/standards.md` | `docs/standards.md` | Standards |
 | `plugins/orchi/skills/orchi-core/scripts/standards.py` | `docs/standards.md` | Standards |
