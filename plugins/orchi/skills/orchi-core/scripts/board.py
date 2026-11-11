@@ -370,8 +370,10 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
 
     def container(cards):
         stages = [item['stage'] for item in cards]
+        # Progress counts work items; an Epic's own card only stands in for it while it has no open Task.
+        work = [item['stage'] for item in cards if item['kind'] not in ('Epic', 'Initiative')]
         return {'stage': next((stage for stage in ATTENTION if stage in stages), 'plan') if stages else 'plan',
-                'done': stages.count('done'), 'total': len(stages),
+                'done': work.count('done'), 'total': len(work),
                 'counts': {stage: stages.count(stage) for stage in COLUMNS}}
 
     def children(node, group, epic):
@@ -387,7 +389,7 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
     open_epics = {node['number']: node for node in tree.get('epics') or []}
     initiatives = {node['number'] for node in tree.get('initiatives') or []}
     for node in tree.get('initiatives') or []:
-        key, inside = str(node['number']), []
+        key, inside, start = str(node['number']), [], len(epics)
         shown.add(node['number'])
         for child in node['subIssues']['nodes']:
             number = child['number']
@@ -411,8 +413,9 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
                           'group': key, **container(made)})
             inside += made
         groups.append({'key': key, 'number': node['number'], 'title': node['title'], 'url': node['url'],
-                       'kind': 'Initiative', 'epics': len(node['subIssues']['nodes']),
-                       **container(inside)})
+                       'kind': 'Initiative', 'epics': len(node['subIssues']['nodes']), **container(inside),
+                       'done': sum(item['done'] for item in epics[start:]),
+                       'total': sum(item['total'] for item in epics[start:])})
     for node in tree.get('epics') or []:
         if node['number'] in shown or (node.get('parent') or {}).get('number') in initiatives:
             continue

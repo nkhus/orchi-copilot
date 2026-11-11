@@ -196,14 +196,15 @@ def test_board_places_every_card_in_one_column():
     assert tasks[11]['kind'] == 'Issue' and tasks[11]['group'] == 'outside' and tasks[11]['epic'] is None
     groups = {group['key']: group for group in document['board']['groups']}
     assert list(groups) == ['1', '10', 'outside']
-    assert groups['1']['stage'] == 'ask' and groups['1']['done'] == 2 and groups['1']['total'] == 5
+    # Progress counts work items: a closed Epic by its sub-issue summary, an open one by its Tasks.
+    assert groups['1']['stage'] == 'ask' and (groups['1']['done'], groups['1']['total']) == (3, 6)
     assert groups['10']['kind'] == 'Epic' and groups['10']['stage'] == 'review'
     assert groups['outside']['stage'] == 'review' and groups['outside']['counts']['plan'] == 2
     epics = {epic['number']: epic for epic in document['board']['epics']}
     assert epics[2]['stage'] == 'ask' and epics[2]['counts'] == {
         'plan': 0, 'backlog': 0, 'progress': 0, 'ask': 1, 'review': 1, 'done': 1}
     assert epics[3]['stage'] == 'done' and (epics[3]['done'], epics[3]['total']) == (2, 2)
-    assert epics[4]['stage'] == 'plan' and epics[4]['group'] == '1'
+    assert epics[4]['stage'] == 'plan' and epics[4]['group'] == '1' and epics[2]['total'] == 3
     # Orchi may move a card to where the work is when GitHub does not show it yet.
     moved = board.snapshot('o/n', github, {'stages': {'12': 'backlog', '6': 'ask'}}, NOW)
     assert {card['number']: card['stage'] for card in moved['board']['tasks']}[12] == 'backlog'
