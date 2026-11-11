@@ -18,9 +18,10 @@ directory, shown when it loads, is installed at
 ## Design engines
 
 Orchi works with two design skills, and a project designs with the one its
-`DESIGN.md` names (`Design engine:`). Orchi does not bundle them: the user
-installs them as skills, in the repository's `.github/skills/` or their own
-`~/.copilot/skills/`.
+`DESIGN.md` names (`Design engine:`). Orchi does not bundle them: the session
+that talks to the user installs them on the user's yes, as the roles
+reference's Design skills section says, among the user's skills or in the
+repository's `.github/skills/`.
 
 - **Hallmark** (`hallmark`): load it with the `skill` tool and run it as
   `/hallmark <prompt>`, or `/hallmark audit <path>`.

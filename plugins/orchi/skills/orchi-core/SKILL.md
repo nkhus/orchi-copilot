@@ -79,7 +79,7 @@ Read only the reference needed for the current stage.
 | Keep documentation and decisions current; working documents; reconcile branches | [Knowledge](references/knowledge.md) |
 | Create, relate, or close Issues; PR conventions | [GitHub conventions](references/github.md) |
 | Search or read documentation; validate links | [Retrieval](references/retrieval.md) |
-| Run Orchi, crews, and workers as a session pool | [Pool](references/pool.md) |
+| Run Orchi, crews, and workers as a session pool; the board, the design board, and pages beside the conversation | [Pool](references/pool.md), [Canvases](references/canvases.md) |
 
 ## Entry skills and subagents
 
@@ -97,4 +97,4 @@ user, change Issues, push, or merge; their reports are claims to verify. Delegat
 Run this skill's scripts (Git, `gh`, Python standard library) from the repository root with its base directory,
 `<orchi-core>`: `python3 <orchi-core>/scripts/status.py` lists open Epics and standalone Tasks with owners, blockers, and
 readiness; `knowledge.py` searches documentation, reads exact snapshots, and checks local links; `standards.py` checks
-`ENGINEERING.md` against CI. Only `setup.py` writes: it [prepares a repository](references/pool.md#prepare-the-repository).
+`ENGINEERING.md` against CI; `board.py` feeds the board canvas. Only `setup.py` writes: it [prepares a repository](references/pool.md#prepare-the-repository).

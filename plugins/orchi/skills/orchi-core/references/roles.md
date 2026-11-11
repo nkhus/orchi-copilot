@@ -57,11 +57,25 @@ the work belongs to another role (a `size` escalation), or when the Task
 
 ## Design skills
 
-Orchi designs with two design skills, which the user installs as skills; the
-plugin does not bundle them: [Hallmark](https://github.com/Nutlope/hallmark),
-strongest on pages that are read, and Emil Kowalski's
-[prototype](https://github.com/emilkowalski/skills), strongest on screens that
-are worked in. When one is not installed, the designer works without it. A
+Orchi designs with two design skills that the plugin does not bundle:
+[Hallmark](https://github.com/Nutlope/hallmark), strongest on pages that are
+read, and Emil Kowalski's [prototype](https://github.com/emilkowalski/skills),
+strongest on screens that are worked in. Before its first design round, the
+session that talks to the user checks them with
+`gh skill list --agent github-copilot --json skillName,version,pinned`; for each
+one missing, it asks the user (`ask_user`) whether to install it for all their
+projects, at the version Orchi was tested with, and on their yes runs:
+
+```bash
+gh skill install Nutlope/hallmark skills/hallmark --pin 6033bab2a8051b5454552d2e8e6cb8f27c483a42 --agent github-copilot --scope user
+gh skill install emilkowalski/skills skills/prototype --pin 2d228630ba1446365f614a108cb8252f1feda202 --agent github-copilot --scope user
+```
+
+Skills load when a session starts, so a new skill reaches the `orchi-designer`
+subagents the session starts afterwards; when one does not see it, start the
+next round in a new session or work without it. On a no, a failed install, or
+a `gh` without `skill`, the designer works without that skill and the round
+says so. A project's own copy in `.github/skills/` comes first. A
 project designs with one of them, its design engine: the user picks it in the
 project's first design Epic, from variants both skills built independently, and
 `DESIGN.md` records it. The steps split by who can take them:
