@@ -51,7 +51,7 @@ The test suite, in `tests/`:
 | `test_consistency.py` | Skills, agents, and references agree where a session follows one and not the other |
 | `test_delivery.py` | Writer continuation, verification verdicts, and delivery course corrections |
 | `test_design.py` | The design track's wording across planning, readiness, the forms, the skills, and the designer agent |
-| `test_board.py` | `board.py`: the crews' states, assignees and linked branches, deferred and held items, questions kept in comments with sent and answered ones, each card's column, Epic and Initiative aggregation and progress, history with back-moves, and what waits for the user |
+| `test_board.py` | `board.py`: the crews' states, assignees and linked branches, deferred and held items, the owner's overlay of questions with sent and answered ones, Summary, mode, and queue, the read-only board for anyone else, each card's column, Epic and Initiative aggregation and progress, history with back-moves, and what waits for the user |
 | `test_canvases.py` | The canvases extension under Node: request sentences (answers with their `request_id`, plans, reviews), the board's Summary prose linking `#<n>` and crew names, round checks, path containment, and the loopback server's token, `Host`, and JSON checks; skipped without Node |
 | `test_context.py`, `test_knowledge.py` | `knowledge.py` snapshot isolation, reads, lint, `impact`, and `work`, and the vendored copy run from a repository root |
 | `test_standards.py` | `standards.py check` and `ruleset` |
@@ -124,7 +124,9 @@ Check that:
   `answer_session_input` with the right `request_id` and choice, Approve plan
   through `respond_to_session_plan_v2`, and Open session through
   `navigate_to`; a crew going on with an assumed answer reports it, and Orchi
-  writes the question and answer comments;
+  keeps the question on the board, not in GitHub;
+- another user with read access opens the board on the same repository and
+  sees the work read-only, with no crews, questions, or buttons;
 - before the first design round, a session offers to install the missing
   design skills, and `orchi-designer` subagents started afterwards see them;
 - a living prototype opens in the Browser canvas and reloads after each

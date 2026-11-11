@@ -1,13 +1,14 @@
-// The Orchi board: the pool's crews and backlog for one repository. It reads GitHub through the bundled board.py and
-// what Orchi last reported through `update_pool`; it changes nothing in GitHub. A button the user confirms becomes a
-// request in this conversation.
+// The Orchi board: the pool's crews and backlog for one repository. Anyone can build it from GitHub through the
+// bundled board.py; it changes nothing in GitHub. Where Orchi reports through `update_pool`, it is the owner's board:
+// it adds the crews' live state and the user's questions, and a button the user confirms becomes a request in this
+// conversation. Everywhere else it is read-only.
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CanvasError, createCanvas } from "@github/copilot-sdk/extension";
 import { boardRequest } from "./requests.mjs";
-import { startServer } from "./server.mjs";
+import { RequestError, startServer } from "./server.mjs";
 import { readJson, sessionFiles, writeJson } from "./store.mjs";
 
 const SCRIPT = fileURLToPath(new URL("../../../skills/orchi-core/scripts/board.py", import.meta.url));
@@ -15,8 +16,6 @@ const PAGE = fileURLToPath(new URL("../ui/board.html", import.meta.url));
 const REPO = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const EVERY = 5 * 60 * 1000;
 const STATES = ["working", "waiting", "idle", "stuck", "free"];
-
-const COLUMNS = ["plan", "backlog", "progress", "ask", "review", "done"];
 const KINDS = ["question", "plan", "permission", "merge", "design"];
 const SENT = 50;
 const texts = (description) => ({ type: "array", items: { type: "string" }, description });
@@ -46,8 +45,8 @@ const POOL_SCHEMA = object({
     questions: {
         type: "array",
         description:
-            "The user's open questions Orchi keeps, joined by id with those in Issue comments: give request_id while " +
-            "a crew is blocked on ask_user, and the fields of questions no comment holds yet.",
+            "The user's open questions Orchi keeps in its conversation, with request_id while a crew is blocked on " +
+            "ask_user or a plan.",
         items: object({
             id: { type: "string" },
             crew: { type: "string", description: "Who asks: a crew's name, or Orchi." },
@@ -68,9 +67,6 @@ const POOL_SCHEMA = object({
             asked: { type: "string", description: "ISO time." },
         }, ["id"]),
     },
-    merges: { type: "array", items: { type: "integer" }, description: "PRs waiting for the user's yes to merge." },
-    deferred: { type: "array", items: { type: "integer" }, description: "Issues the user deferred." },
-    held: { type: "array", items: { type: "integer" }, description: "PRs the user put on hold." },
     summary: object({
         paragraphs: {
             type: "array",
@@ -85,22 +81,11 @@ const POOL_SCHEMA = object({
         since: { type: "string", description: "One line on what changed today: PRs merged, questions answered, Epics closed." },
         at: { type: "string", description: "ISO time." },
     }),
-    stages: {
-        type: "object",
-        additionalProperties: { type: "string", enum: COLUMNS },
-        description: "Issue or PR number → column, only where GitHub does not show where the work is.",
-    },
-    moves: {
-        type: "array",
-        description: "Notes for a card's history; back = it came back from the user's review.",
-        items: object({ number: { type: "integer" }, to: { type: "string", enum: COLUMNS },
-            at: { type: "string" }, note: { type: "string" }, back: { type: "boolean" } }, ["number"]),
-    },
     queue: {
         type: "array",
-        description: "Work Orchi starts when a crew is free, in order.",
+        description: "Work a planner keeps queued, in order; the board adds the planned work nobody holds after it.",
         items: object({ issue: { type: "integer" }, action: { type: "string", enum: ["take", "plan"] },
-            title: { type: "string" } }, ["issue"]),
+            title: { type: "string" }, after: { type: "integer", description: "The Issue it waits for." } }, ["issue"]),
     },
 });
 
@@ -143,8 +128,7 @@ export function boardCanvas(host) {
         if (!item.running) {
             item.running = (async () => {
                 try {
-                    const document = JSON.parse(await python([SCRIPT, "--json", "--repo", repo, "--state", files(repo).state,
-                        "--previous", files(repo).snapshot]));
+                    const document = JSON.parse(await python([SCRIPT, "--json", "--repo", repo, "--state", files(repo).state]));
                     if (document.error) throw new Error(document.error);
                     item.snapshot = document;
                     item.error = null;
@@ -162,7 +146,7 @@ export function boardCanvas(host) {
         return item;
     }
 
-    // An answer the user sent hides its question until Orchi writes the answer comment.
+    // An answer the user sent hides its question until Orchi reports the question answered.
     async function remember(repo, body) {
         const path = files(repo).state;
         const state = await readJson(path, {});
@@ -209,6 +193,9 @@ export function boardCanvas(host) {
             return { json: { refreshing: true } };
         }
         if (method === "POST" && path === "/request") {
+            if (!(await readJson(files(repo).state, {})).reported) {
+                throw new RequestError("This board is read-only: actions happen on the owner's board.", 403);
+            }
             const prompt = boardRequest(body);
             await host.session.send({ prompt });
             if (body.action === "answer_question") await remember(repo, body);
@@ -222,7 +209,7 @@ export function boardCanvas(host) {
         displayName: "Orchi board",
         description:
             "The Orchi pool of one repository: crews by what needs a look, the Initiative-Epic-Task backlog with PRs " +
-            "and checks, and what waits for the user. Orchi keeps it current with update_pool.",
+            "and checks, and what waits for the user, built from GitHub. Orchi adds its live state with update_pool.",
         inputSchema: {
             type: "object",
             additionalProperties: false,
@@ -238,10 +225,9 @@ export function boardCanvas(host) {
             {
                 name: "update_pool",
                 description:
-                    "Report what only Orchi knows: the crews as get_sessions_status shows them, autonomous mode, the " +
-                    "pool size, the user's open questions, PRs waiting for the user's merge, deferred Issues, held " +
-                    "PRs, the pool summary, card moves and the queue. Fields you pass replace the stored ones; then " +
-                    "the board refreshes.",
+                    "Report what only Orchi knows: the crews as get_sessions_status shows them, the user's open " +
+                    "questions, the Summary, autonomous mode, pool size, and the planner's queue. Fields you pass " +
+                    "replace the stored ones; then the board refreshes and becomes the owner's board, with actions.",
                 inputSchema: POOL_SCHEMA,
                 handler: async (ctx) => {
                     const repo = repoOf(ctx);

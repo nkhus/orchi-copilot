@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""Read-only snapshot of an Orchi pool for its board canvas: the work tree, the planning queue, PRs, recent merges,
-the crews as Orchi last reported them, the questions kept in Issue and PR comments, and a stage for every card."""
+"""Snapshot of an Orchi pool for its board canvas, built from GitHub alone: the work tree, the planning queue, PRs,
+recent merges, and a column and history for every card, read from standard GitHub signals (assignees, linked branches
+and PRs, sub-issues, native blocked-by relationships). With the live overlay Orchi reports on its owner's board, it
+adds the crews, the open questions, the Summary, the autonomous mode, and the pool size; without it, the board shows
+only the work and is read-only."""
 from __future__ import annotations
 
 import argparse
@@ -33,15 +36,31 @@ query($owner: String!, $name: String!) {
       nodes {
         number title url labels(first: 10) { nodes { name } } parent { number } %s
         subIssues { totalCount } blockedBy(first: 10) { nodes { number state } }
-        comments(last: 20) { nodes { body createdAt } }
+        comments(last: 20) { nodes { body createdAt authorAssociation } }
+        timelineItems(last: 20, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, REOPENED_EVENT]) {
+          nodes {
+            __typename
+            ... on AssignedEvent { createdAt assignee { ... on User { login } } }
+            ... on ClosedEvent { createdAt }
+            ... on ReopenedEvent { createdAt }
+          }
+        }
       }
     }
     open: pullRequests(first: 50, states: OPEN, orderBy: {field: CREATED_AT, direction: ASC}) {
       nodes {
-        number title url body isDraft baseRefName reviewDecision additions deletions changedFiles
+        number title url body isDraft baseRefName reviewDecision additions deletions changedFiles createdAt updatedAt
         closingIssuesReferences(first: 10) { nodes { number } }
-        commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }
-        comments(last: 20) { nodes { body createdAt } }
+        commits(last: 1) { nodes { commit { committedDate statusCheckRollup { state } } } }
+        comments(last: 20) { nodes { body createdAt authorAssociation } }
+        timelineItems(last: 30, itemTypes: [READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT, PULL_REQUEST_REVIEW]) {
+          nodes {
+            __typename
+            ... on ReadyForReviewEvent { createdAt }
+            ... on ConvertToDraftEvent { createdAt }
+            ... on PullRequestReview { state submittedAt }
+          }
+        }
       }
     }
     merged: pullRequests(first: 5, states: MERGED, orderBy: {field: UPDATED_AT, direction: DESC}) {
@@ -55,10 +74,15 @@ EXPLORE = 'explore:'
 TITLE = re.compile(r'\[([a-z-]+)\] ')
 ROLES = {'researcher': 'Researcher', 'planner': 'Planner', 'designer': 'Designer', 'dev-lead': 'Dev lead'}
 CHECKS = {'SUCCESS': 'passing', 'FAILURE': 'failing', 'ERROR': 'failing', 'PENDING': 'running', 'EXPECTED': 'running'}
+# The comments Orchi writes for the user's defer, resume, and hold requests. Only comments by the repository's owner,
+# members, and collaborators count.
+DEFER = re.compile(r"^(Deferred|Resumed) at the user's request", re.M)
+HOLD = re.compile(r"^(Held|Released) at the user's request", re.M)
+TRUSTED = {'OWNER', 'MEMBER', 'COLLABORATOR'}
 # The order of the Crews tab: what needs a look first.
 STATES = ('stuck', 'waiting', 'working', 'background', 'idle', 'free')
-# A crew that holds an Issue, runs nothing, and waits for nothing looks stuck after STALL; a background run after
-# LONG_RUN.
+# A crew Orchi reports idle that holds an Issue, runs nothing, and waits for nothing looks stuck after STALL; a
+# background run after LONG_RUN.
 STALL = timedelta(minutes=30)
 LONG_RUN = timedelta(hours=3)
 # The board's columns, left to right, and the order in which a container takes the stage of its cards: what needs the
@@ -69,9 +93,7 @@ ATTENTION = ('ask', 'review', 'progress', 'plan', 'backlog', 'done')
 # Where a card with an open question goes: a question or a tool approval asks, a plan, design round, or merge waits
 # for the user's review.
 ASKS = {'question': 'ask', 'permission': 'ask', 'plan': 'review', 'design': 'review', 'merge': 'review'}
-# A question or answer Orchi keeps in an Issue or PR comment: `<!-- orchi:question {"id": "q1", ...} -->`.
-MARK = re.compile(r'<!--\s*orchi:(question|answer)\s+(\{.*?\})\s*-->', re.S)
-# A sent answer hides its question until Orchi records the answer, for at most SENT.
+# A sent answer hides its question until Orchi stops reporting it, for at most SENT.
 SENT = timedelta(hours=1)
 HISTORY = 20
 
@@ -91,6 +113,12 @@ def moment(value) -> datetime | None:
     return parsed if parsed.tzinfo else None
 
 
+def latest(*values) -> str | None:
+    """The latest of some ISO times, ignoring the unreadable ones."""
+    times = [value for value in values if moment(value)]
+    return max(times, key=moment) if times else None
+
+
 def collect(repo: str, run: status.Runner = status.gh) -> dict:
     """GitHub state of the repository, shaped for the board."""
     owner, _, name = repo.partition('/')
@@ -99,8 +127,12 @@ def collect(repo: str, run: status.Runner = status.gh) -> dict:
     data = json.loads(run(['api', 'graphql', '-f', 'query=' + QUERY, '-f', 'owner=' + owner,
                            '-f', 'name=' + name]))['data']['repository']
     # What an Issue waits for: its first open native blocker.
-    waits = {node['number']: blocker['number'] for node in data['recent']['nodes']
-             for blocker in reversed((node.get('blockedBy') or {}).get('nodes', [])) if blocker['state'] == 'OPEN'}
+    waits = {}
+    for node in data['recent']['nodes']:
+        blockers = [blocker['number'] for blocker in (node.get('blockedBy') or {}).get('nodes', [])
+                    if blocker.get('state') == 'OPEN']
+        if blockers:
+            waits[node['number']] = blockers[0]
 
     def item(number, kind, title, url, state, parent, progress):
         return {'number': number, 'kind': kind, 'title': title, 'url': url, 'status': state, 'parent': parent,
@@ -127,41 +159,93 @@ def collect(repo: str, run: status.Runner = status.gh) -> dict:
             work.append(item(child['number'], 'Task', child['title'], child['url'],
                              'taken' if status.taken(child) else 'todo', node['number'], None))
     # Issues without a type that nobody holds and nobody planned: explorations and requests that need a plan.
-    planning = [item(node['number'], kind_of(node) if kind_of(node) == 'Exploration' else 'needs-planning',
+    planning = [item(node['number'], 'Exploration' if kind_of(node) == 'Exploration' else 'needs-planning',
                      node['title'], node['url'], 'planning', None, None)
                 for node in sorted(data['recent']['nodes'], key=lambda node: node['number'])
                 if kind_of(node) in {'Exploration', 'Issue'} and status.stage(node) == 'unplanned']
     default = (data.get('defaultBranchRef') or {}).get('name')
-    pulls, comments = [], []
+    pulls = []
     for node in data['open']['nodes']:
         commits = node['commits']['nodes']
-        rollup = ((commits[0]['commit'].get('statusCheckRollup') or {}) if commits else {}).get('state')
+        commit = commits[0]['commit'] if commits else {}
+        rollup = (commit.get('statusCheckRollup') or {}).get('state')
+        events = pull_events(node)
+        asked = [event['at'] for event in events if event['kind'] == 'changes']
         pulls.append({'number': node['number'], 'title': node['title'], 'url': node['url'], 'draft': node['isDraft'],
                       'base': node['baseRefName'], 'into_default': node['baseRefName'] == default,
                       'checks': CHECKS.get(rollup, 'none'), 'review': node.get('reviewDecision'),
                       'closes': [issue['number'] for issue in node['closingIssuesReferences']['nodes']],
                       'additions': node.get('additions') or 0, 'deletions': node.get('deletions') or 0,
-                      'files': node.get('changedFiles') or 0, 'changes': changes(node.get('body'))})
-        comments += [{'number': node['number'], 'body': c['body'], 'created': c['createdAt']}
-                     for c in (node.get('comments') or {}).get('nodes', [])]
-    for node in data['recent']['nodes']:
-        comments += [{'number': node['number'], 'body': c['body'], 'created': c['createdAt']}
-                     for c in (node.get('comments') or {}).get('nodes', [])]
+                      'files': node.get('changedFiles') or 0, 'changes': changes(node.get('body')),
+                      'created': node.get('createdAt'), 'committed': commit.get('committedDate'),
+                      'updated': latest(node.get('updatedAt'), commit.get('committedDate')), 'events': events,
+                      # Sent back: its latest review asks for changes and nothing was pushed since.
+                      'sent_back': node.get('reviewDecision') == 'CHANGES_REQUESTED' and not (
+                          asked and moment(commit.get('committedDate'))
+                          and moment(commit['committedDate']) > moment(max(asked, key=moment)))})
+    timeline = {node['number']: issue_events(node) for node in data['recent']['nodes']}
     merged = [{'number': node['number'], 'title': node['title'], 'url': node['url'], 'merged_at': node['mergedAt'],
                'base': node['baseRefName']} for node in data['merged']['nodes']]
     tree = {'initiatives': data['initiatives']['nodes'], 'epics': data['epics']['nodes'],
-            'issues': data['recent']['nodes'], 'comments': comments,
-            'waits': waits,
+            'issues': data['recent']['nodes'], 'timeline': timeline, 'waits': waits,
             'standalone': [entry for entry in work if entry['kind'] == 'Task' and entry['parent'] is None]}
     return {'default_branch': default, 'work': work, 'planning': planning, 'pulls': pulls, 'merged': merged,
-            'tree': tree}
+            'deferred': flagged(data['recent']['nodes'], DEFER, 'Deferred'),
+            'held': flagged(data['open']['nodes'], HOLD, 'Held'), 'tree': tree}
+
+
+def flagged(nodes: list[dict], pattern: re.Pattern, on: str) -> list[int]:
+    """The Issues or PRs whose latest trusted comment matching the pattern says `on`: `Deferred` or `Held`."""
+    numbers = []
+    for node in nodes:
+        said = [(moment(comment.get('createdAt')), match[1])
+                for comment in (node.get('comments') or {}).get('nodes', [])
+                if comment.get('authorAssociation') in TRUSTED and moment(comment.get('createdAt'))
+                for match in pattern.finditer(comment.get('body') or '')]
+        if said and max(said, key=lambda pair: pair[0])[1] == on:
+            numbers.append(node['number'])
+    return sorted(numbers)
+
+
+def issue_events(node: dict) -> list[dict]:
+    """An Issue's history: assignments that took it, closing and reopening, and the user's defer and resume."""
+    events = []
+    for event in (node.get('timelineItems') or {}).get('nodes', []):
+        kind, at = event.get('__typename'), event.get('createdAt')
+        if kind == 'AssignedEvent':
+            login = (event.get('assignee') or {}).get('login')
+            events.append({'at': at, 'to': 'progress', 'note': f'assigned to @{login}' if login else 'assigned',
+                           'back': False})
+        elif kind == 'ClosedEvent':
+            events.append({'at': at, 'to': 'done', 'note': '', 'back': False})
+        elif kind == 'ReopenedEvent':
+            events.append({'at': at, 'text': 'Reopened'})
+    for comment in (node.get('comments') or {}).get('nodes', []):
+        if comment.get('authorAssociation') in TRUSTED:
+            for match in DEFER.finditer(comment.get('body') or ''):
+                events.append({'at': comment.get('createdAt'), 'text': match[1] + ' at your request'})
+    return events
+
+
+def pull_events(node: dict) -> list[dict]:
+    """A PR's moves: marked ready for review, converted to draft, and reviews that approve or ask for changes."""
+    kinds = {'ReadyForReviewEvent': 'ready', 'ConvertToDraftEvent': 'draft'}
+    events = []
+    for event in (node.get('timelineItems') or {}).get('nodes', []):
+        kind = event.get('__typename')
+        if kind in kinds:
+            events.append({'at': event.get('createdAt'), 'kind': kinds[kind]})
+        elif kind == 'PullRequestReview' and event.get('state') in {'CHANGES_REQUESTED', 'APPROVED'}:
+            events.append({'at': event.get('submittedAt'),
+                           'kind': 'changes' if event['state'] == 'CHANGES_REQUESTED' else 'approved'})
+    return sorted((event for event in events if moment(event['at'])), key=lambda event: moment(event['at']))
 
 
 def changes(body: str | None) -> list[str]:
     """The lines of a PR body's Summary section, without template comments: what changed, for the review card."""
     text = re.sub(r'<!--.*?-->', '', body or '', flags=re.S)
-    section = re.search(r'^#+\s*Summary\s*$(.*?)(?=^#+\s|\Z)', text, re.M | re.S)
-    lines = [line.strip().lstrip('-*').strip() for line in (section[1] if section else text).splitlines()]
+    section_ = re.search(r'^#+\s*Summary\s*$(.*?)(?=^#+\s|\Z)', text, re.M | re.S)
+    lines = [line.strip().lstrip('-*').strip() for line in (section_[1] if section_ else text).splitlines()]
     return [line for line in lines if line][:6]
 
 
@@ -175,14 +259,21 @@ def lineage(work: list[dict], number: int | None) -> list[int]:
     return chain
 
 
+def merging(github: dict) -> set[int]:
+    return {number for pull in github['pulls'] if not pull['draft'] for number in pull['closes']}
+
+
 def crews(github: dict, reported: list[dict], now: datetime) -> list[dict]:
     """The crews Orchi reported, joined with the Issue each holds and ordered by what needs a look first.
 
     A crew's state is Orchi's reading of the app (`working`, `waiting`, `idle`, `stuck`, or `free`); an idle crew with
     a named background run shows as `background`. An idle crew that holds an Issue, waits for no other Issue and no
     merge of its PR, and has been quiet for STALL shows as `stuck`, as does a background run older than LONG_RUN."""
-    items = {entry['number']: entry for entry in github['work'] + github['planning']}
-    merging = {number for pull in github['pulls'] if not pull['draft'] for number in pull['closes']}
+    # A taken Issue without a type is no work item; its title and link come from the recent Issues.
+    items = {node['number']: {'title': node['title'], 'url': node['url']} for node in github['tree']['issues']}
+    items.update({entry['number']: entry for entry in github['work'] + github['planning']})
+    waits = github['tree'].get('waits') or {}
+    pending = merging(github)
     joined = []
     for crew in reported:
         name = crew.get('name') or ''
@@ -195,7 +286,7 @@ def crews(github: dict, reported: list[dict], now: datetime) -> list[dict]:
             if quiet and now - quiet > LONG_RUN:
                 state, reason = 'stuck', 'background run for hours: ' + crew['background']
         elif (state == 'idle' and issue and quiet and now - quiet > STALL
-              and not (items.get(issue) or {}).get('waits_for') and issue not in merging):
+              and not waits.get(issue) and issue not in pending):
             state, reason = 'stuck', 'idle while it holds work'
         entry = items.get(issue) or {}
         joined.append({**crew, 'name': name, 'role': role(name), 'issue': issue, 'state': state, 'stuck': reason,
@@ -204,31 +295,17 @@ def crews(github: dict, reported: list[dict], now: datetime) -> list[dict]:
     return sorted(joined, key=lambda crew: STATES.index(crew['state']))
 
 
-def kept(github: dict, state: dict, joined: list[dict], now: datetime) -> tuple[list[dict], list[dict]]:
-    """The user's open questions and the answers of today.
+def kept(state: dict, joined: list[dict], now: datetime) -> tuple[list[dict], list[dict]]:
+    """The user's open questions and the answers of today, from Orchi's live overlay.
 
-    A question is what Orchi keeps in an Issue or PR comment, joined by id with what it reported through `update_pool`
-    (the report wins: it carries the live `request_id`). A waiting crew whose question Orchi did not report yet gets
-    one. A question is answered once Orchi's answer comment exists; an answer the board sent hides its question for
-    SENT while Orchi picks it up."""
-    asked, answers = {}, {}
-    for comment in (github.get('tree') or {}).get('comments', []):
-        for kind, raw in MARK.findall(comment.get('body') or ''):
-            try:
-                data = json.loads(raw)
-            except ValueError:
-                continue
-            if not isinstance(data, dict) or not data.get('id'):
-                continue
-            key = str(data['id'])
-            if kind == 'question':
-                asked[key] = {'issue': comment['number'], 'asked': comment['created'], **data, 'id': key}
-            else:
-                answers[key] = {'answer': str(data.get('answer') or ''), 'at': comment['created']}
+    A question is what Orchi reported through `update_pool`; a waiting crew whose question Orchi did not report yet
+    gets one. An answer the board sent hides its question for SENT while Orchi picks it up, and counts as picked up
+    once Orchi no longer reports the question."""
+    asked = {}
     for position, question in enumerate(state.get('questions') or []):
         if isinstance(question, dict):
             key = str(question.get('id') or f'orchi-{position + 1}')
-            asked[key] = {**asked.get(key, {}), **question, 'id': key}
+            asked[key] = {**question, 'id': key}
     for crew in joined:
         if crew['state'] == 'waiting' and crew.get('question') and not any(
                 question.get('crew') == crew['name'] and blocking(question) for question in asked.values()):
@@ -239,9 +316,7 @@ def kept(github: dict, state: dict, joined: list[dict], now: datetime) -> tuple[
     open_, answered = [], []
     for key, question in asked.items():
         question = normal(question)
-        if key in answers:
-            answered.append({**brief(question), **answers[key], 'picked': True})
-        elif key in sent and (moment(sent[key].get('at')) or now - SENT) > now - SENT:
+        if key in sent and (moment(sent[key].get('at')) or now - SENT) > now - SENT:
             answered.append({**brief(question), 'answer': sent[key].get('answer') or '', 'at': sent[key]['at'],
                              'picked': False})
         else:
@@ -286,16 +361,25 @@ def brief(question: dict) -> dict:
     return {key: question[key] for key in ('id', 'crew', 'issue', 'text')}
 
 
-def build(github: dict, document: dict, previous: dict | None, now: datetime) -> dict:
+def ready(pull: dict) -> bool:
+    """A PR waits for the user's review: into the default branch, not a draft, and not sent back."""
+    return not pull['draft'] and pull['into_default'] and not pull.get('sent_back')
+
+
+def mergeable(pull: dict) -> bool:
+    return ready(pull) and pull['checks'] in {'passing', 'none'}
+
+
+def build(github: dict, document: dict, now: datetime) -> dict:
     """The board's three levels: groups (Initiatives, standalone Epics, and Outside Initiatives), their Epics, and
     the cards inside, each in one column. A container takes the column of its cards in ATTENTION order; one with no
     open card shows itself as its only card."""
     tree = github.get('tree') or {}
     pulls = github['pulls']
     crews_by_issue = {crew['issue']: crew for crew in document['crews'] if crew.get('issue')}
-    deferred = set(document.get('deferred') or [])
-    merges = set(document.get('merges') or [])
-    overrides = {str(key): value for key, value in (document.get('stages') or {}).items() if value in COLUMNS}
+    queued_after = {item['issue']: item.get('after') for item in document.get('queue') or [] if item.get('after')}
+    deferred = set(github.get('deferred') or [])
+    held = set(github.get('held') or [])
     asks = {}
     for question in document['questions']:
         if question['issue']:
@@ -304,15 +388,8 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
     for pull in pulls:
         for number in pull['closes']:
             closing.setdefault(number, []).append(pull)
-    old = {card['key']: card for card in ((previous or {}).get('board') or {}).get('tasks') or []}
-    moves = {}
-    for move in document.get('moves') or []:
-        if isinstance(move, dict) and isinstance(move.get('number'), int):
-            moves.setdefault(move['number'], []).append(move)
+    timeline = tree.get('timeline') or {}
     groups, epics, tasks, shown = [], [], [], set()
-
-    def ready(pull):
-        return not pull['draft'] and (pull['into_default'] or pull['number'] in merges)
 
     def card(number, title, url, kind, group, epic, closed=False, signal='ready', pull=None):
         """One card; `signal` is the Issue's GitHub state from status.stage: taken, ready, or unplanned."""
@@ -320,6 +397,7 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
         questions = [question for question in asks.get(number, []) if question['blocking']]
         crew = crews_by_issue.get(number) or {}
         own = [pull] if pull else sorted(closing.get(number, []), key=lambda item: item['draft'])
+        queued = queued_after.get(number)
         if closed:
             stage, detail = 'done', 'done'
         elif number in deferred and not questions:
@@ -329,25 +407,27 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
             stage, detail = ASKS[question['kind']], question['kind']
         elif any(ready(item) for item in own):
             stage, detail = 'review', 'pr'
+        elif queued:
+            stage, detail = 'backlog', 'queued'
         elif own or signal == 'taken' or crew:
             stage, detail = 'progress', 'run'
-        elif kind in {'Task', 'PR'} and signal != 'unplanned':
+        elif signal == 'ready':
             stage, detail = 'backlog', 'queued'
         else:
             stage, detail = 'plan', 'needs-plan'
-        if not closed and overrides.get(str(number)):
-            stage = overrides[str(number)]
         pull_ = next((item for item in own if ready(item)), own[0] if own else None)
         name = crew.get('name')
         stuck = crew.get('state') == 'stuck'
         entry = {'key': str(number), 'number': number, 'title': title, 'url': url, 'kind': kind, 'group': group,
                  'epic': epic, 'stage': stage, 'detail': detail, 'crew': name, 'session': crew.get('session_id'),
                  'crew_state': crew.get('state'), 'waits_for': (tree.get('waits') or {}).get(number),
-                 'deferred': number in deferred, 'questions': [q['id'] for q in asks.get(number, [])],
+                 'queued_after': queued, 'deferred': number in deferred,
+                 'held': bool(pull_ and pull_['number'] in held),
+                 'questions': [q['id'] for q in asks.get(number, [])],
                  'pull': pull_ and {key: pull_[key] for key in ('number', 'url', 'title', 'draft', 'checks', 'review',
                                                                'additions', 'deletions', 'files', 'changes')}}
         entry['state'], entry['tone'] = describe(entry, questions, crew, stuck)
-        entry['history'], entry['back'] = history(entry, old.get(entry['key']), moves.get(number, []), previous, now)
+        entry['history'], entry['back'] = history(entry, timeline.get(number, []), own)
         tasks.append(entry)
         return entry
 
@@ -417,8 +497,7 @@ def build(github: dict, document: dict, previous: dict | None, now: datetime) ->
             outside.append(card(entry['number'], entry['title'], entry['url'], entry['kind'] if entry['kind'] ==
                                 'Exploration' else 'Issue', 'outside', None, signal='unplanned'))
     for node in tree.get('issues') or []:
-        names = labels(node)
-        if node['number'] not in shown and not any(status.labelled(names, kind) for kind in ('Initiative', 'Epic')):
+        if node['number'] not in shown and kind_of(node) not in {'Initiative', 'Epic'}:
             outside.append(card(node['number'], node['title'], node['url'], kind_of(node), 'outside', None,
                                 signal=status.stage(node)))
     for pull in pulls:
@@ -438,7 +517,7 @@ def labels(node: dict) -> list[str]:
 def kind_of(node: dict) -> str:
     names = labels(node)
     kind = next((kind for kind in ('Initiative', 'Epic', 'Task') if status.labelled(names, kind)), None)
-    return kind or ('Exploration' if node.get('title', '').casefold().startswith(EXPLORE) else 'Issue')
+    return kind or ('Exploration' if (node.get('title') or '').casefold().startswith(EXPLORE) else 'Issue')
 
 
 def describe(card: dict, questions: list[dict], crew: dict, stuck: bool) -> tuple[str, str]:
@@ -452,6 +531,8 @@ def describe(card: dict, questions: list[dict], crew: dict, stuck: bool) -> tupl
             return {'permission': 'tool approval', 'plan': 'approve plan', 'design': 'design round',
                     'merge': 'ready to merge'}.get(question['kind'], short(question['text'])), 'orange'
         if pull:
+            if card['held']:
+                return 'on hold', 'orange'
             if card['kind'] == 'PR':
                 return 'PR, no Issue', 'orange'
             return ('ready to merge' if pull['checks'] in {'passing', 'none'} else f"checks {pull['checks']}"), 'orange'
@@ -463,11 +544,17 @@ def describe(card: dict, questions: list[dict], crew: dict, stuck: bool) -> tupl
             return short(crew['doing']), 'blue'
         if pull and pull['checks'] == 'failing':
             return f"PR #{pull['number']} checks failing", 'blue'
+        if pull and pull['review'] == 'CHANGES_REQUESTED':
+            return f"PR #{pull['number']} changes requested", 'blue'
         return (f"draft PR #{pull['number']}" if pull and pull['draft'] else 'in progress'), 'blue'
     if stage == 'backlog':
+        if card['deferred']:
+            return 'deferred', 'grey'
         if card['waits_for']:
             return f"after #{card['waits_for']}", 'grey'
-        return ('deferred' if card['deferred'] else 'queued'), 'grey'
+        if card['queued_after']:
+            return f"queued after #{card['queued_after']}", 'grey'
+        return 'queued', 'grey'
     return 'needs a plan', 'grey'
 
 
@@ -476,61 +563,91 @@ def short(text: str, width: int = 60) -> str:
     return text if len(text) <= width else text[:width - 1].rstrip() + '…'
 
 
-def history(card: dict, old: dict | None, moves: list[dict], previous: dict | None,
-            now: datetime) -> tuple[list[dict], bool]:
-    """A card's moves: those the board saw between two snapshots, who took it, and the notes Orchi reported. A move
-    from Your review back to an earlier column is a back-move; the card shows it until its next move."""
-    entries = list((old or {}).get('history') or [])
-    at = now.isoformat(timespec='seconds')
-    if old and old.get('stage') != card['stage']:
-        back = old.get('stage') == 'review' and card['stage'] not in {'review', 'done'}
-        entries.append({'at': at, 'from': old.get('stage'), 'to': card['stage'], 'back': back})
-    elif not old and previous and card['stage'] != 'done':
-        entries.append({'at': at, 'from': None, 'to': card['stage'], 'back': False})
-    if card['crew'] and (old or {}).get('crew') != card['crew']:
-        entries.append({'at': at, 'text': 'Taken by ' + card['crew']})
-    for move in moves:
-        entry = {'at': move.get('at') or at, 'to': move.get('to') if move.get('to') in COLUMNS else None,
-                 'note': move.get('note') or '', 'back': bool(move.get('back'))}
-        if not any(item.get('at') == entry['at'] and item.get('note') == entry['note'] for item in entries):
-            entries.append(entry)
-    entries.sort(key=lambda item: item.get('at') or '')
+def history(card: dict, events: list[dict], pulls: list[dict]) -> tuple[list[dict], bool]:
+    """A card's moves from GitHub's timelines: its assignments, closing, the user's defer and resume, and its PRs opened,
+    ready for review, approved, sent back by a review or a return to draft, and updated after that. A move from Your
+    review back to In progress is a back-move; the card shows it until its next move."""
+    entries = list(events)
+    for pull in pulls:
+        number, into = pull['number'], pull.get('into_default')
+        if pull.get('created'):
+            entries.append({'at': pull['created'], 'text': f'PR #{number} opened'})
+        toggles = [event['kind'] for event in pull.get('events') or [] if event['kind'] in {'ready', 'draft'}]
+        reviewable = toggles[0] == 'draft' if toggles else not pull['draft']
+        if reviewable and into and pull.get('created'):
+            entries.append({'at': pull['created'], 'to': 'review', 'note': f'PR #{number}', 'back': False})
+        asked = None
+        for event in pull.get('events') or []:
+            if event['kind'] == 'ready':
+                reviewable = True
+                if into:
+                    entries.append({'at': event['at'], 'to': 'review', 'note': f'PR #{number} ready', 'back': False})
+            elif event['kind'] == 'draft':
+                if reviewable and into:
+                    entries.append({'at': event['at'], 'to': 'progress', 'note': f'PR #{number} back to draft',
+                                    'back': True})
+                reviewable = False
+            elif event['kind'] == 'changes':
+                asked = event['at']
+                entries.append({'at': asked, 'to': 'progress', 'note': f'changes requested on PR #{number}',
+                                'back': True})
+            else:
+                entries.append({'at': event['at'], 'text': f'PR #{number} approved'})
+        if asked and reviewable and into and not pull.get('sent_back') and moment(pull.get('committed')) \
+                and moment(pull['committed']) > moment(asked):
+            entries.append({'at': pull['committed'], 'to': 'review', 'note': f'PR #{number} updated', 'back': False})
+    entries = sorted((entry for entry in entries if moment(entry.get('at'))), key=lambda entry: moment(entry['at']))
     entries = entries[-HISTORY:]
-    last = next((item for item in reversed(entries) if item.get('to')), None)
+    last = next((entry for entry in reversed(entries) if entry.get('to')), None)
     return entries, bool(last and last.get('back') and last.get('to') == card['stage'])
 
 
-def waiting(document: dict) -> list[dict]:
-    """What waits for the user: the questions that block a crew or Orchi, and PRs waiting for their yes to merge:
-    those Orchi asked about, or, when Orchi named none and autonomous mode is off, PRs into the default branch that
-    are ready to merge."""
-    items = [{'kind': 'question' if question['crew'] != 'Orchi' else 'orchi', 'id': question['id'],
-              'crew': question['crew'], 'issue': question['issue'], 'text': question['text']}
-             for question in document['questions'] if question['blocking']]
-    asked = document.get('merges')
-    held = set(document.get('held') or [])
-    items += [{'kind': 'merge', 'pull': pull['number'], 'text': pull['title']} for pull in document['pulls']
-              if pull['number'] not in held and (pull['number'] in asked if asked is not None else
-                                                 document.get('mode') == 'off' and pull['into_default']
-                                                 and not pull['draft'] and pull['checks'] in {'passing', 'none'})]
+def queue(github: dict, document: dict) -> list[dict]:
+    """Work that starts when a crew is free: the Issues Orchi reports a planner keeps queued, then planned Epics and
+    standalone Tasks nobody holds, that wait for nothing and that the user did not defer."""
+    deferred = set(github.get('deferred') or [])
+    items = [{'issue': item['issue'], 'action': item.get('action') or 'take', 'title': item.get('title') or '',
+              **({'after': item['after']} if item.get('after') else {})}
+             for item in document.get('queue') or [] if isinstance(item, dict) and isinstance(item.get('issue'), int)]
+    listed = {item['issue'] for item in items}
+    for entry in github['work']:
+        if (entry['kind'] in {'Epic', 'Task'} and entry['status'] == 'ready' and not entry['waits_for']
+                and entry['number'] not in deferred | listed):
+            items.append({'issue': entry['number'], 'action': 'take', 'title': entry['title']})
     return items
 
 
-def snapshot(repo: str, github: dict, state: dict, now: datetime, previous: dict | None = None) -> dict:
-    """The document the board renders: GitHub state joined with what Orchi last reported."""
-    github = dict(github)
-    tree = github.pop('tree', {})
-    document = {'repository': repo, 'updated': now.isoformat(timespec='seconds'), 'error': None,
-                'mode': state.get('mode'), 'limit': state.get('limit'), 'reported': state.get('reported'),
-                'merges': state.get('merges'), 'deferred': state.get('deferred') or [], 'held': state.get('held') or [],
-                'stages': state.get('stages') or {}, 'moves': state.get('moves') or [],
-                'summary': state.get('summary') or {}, 'queue': state.get('queue') or [], **github}
-    document['crews'] = crews(github, state.get('crews') or [], now)
-    document['questions'], document['answered'] = kept({'tree': tree}, state, document['crews'], now)
-    document['board'] = build({**github, 'tree': tree}, document, previous, now)
+def waiting(document: dict) -> list[dict]:
+    """What waits for the user: the questions that block a crew or Orchi, and, unless autonomous mode is on, PRs
+    into the default branch that are ready to merge (not a draft, not sent back, checks green) and not held."""
+    items = [{'kind': 'question' if question['crew'] != 'Orchi' else 'orchi', 'id': question['id'],
+              'crew': question['crew'], 'issue': question['issue'], 'text': question['text']}
+             for question in document['questions'] if question['blocking']]
+    if document.get('mode') != 'on':
+        held = set(document.get('held') or [])
+        items += [{'kind': 'merge', 'pull': pull['number'], 'text': pull['title']} for pull in document['pulls']
+                  if mergeable(pull) and pull['number'] not in held]
+    return items
+
+
+def snapshot(repo: str, github: dict, state: dict, now: datetime) -> dict:
+    """The document the board renders. Its owner, whose Orchi reports the live overlay, gets the crews, questions,
+    Summary, autonomous mode, and pool size from it; anyone else gets the work as GitHub shows it, read-only."""
+    owner = bool(state.get('reported'))
+    overlay = state if owner else {}
+    limit = overlay.get('limit')
+    document = {'repository': repo, 'updated': now.isoformat(timespec='seconds'), 'error': None, 'owner': owner,
+                'reported': state.get('reported'),
+                'mode': overlay.get('mode') if overlay.get('mode') in {'on', 'off'} else None,
+                'limit': limit if isinstance(limit, int) and not isinstance(limit, bool) and limit > 0 else None,
+                'summary': overlay.get('summary') if isinstance(overlay.get('summary'), dict) else {},
+                **{key: value for key, value in github.items() if key != 'tree'}}
+    document['crews'] = crews(github, overlay.get('crews') or [], now)
+    document['questions'], document['answered'] = kept(overlay, document['crews'], now) if owner else ([], [])
+    document['queue'] = queue(github, overlay)
+    document['board'] = build(github, document, now)
     document['waiting'] = waiting(document)
-    for name in ('stages', 'moves'):
-        document.pop(name)
+    document['pulls'] = [{key: value for key, value in pull.items() if key != 'events'} for pull in github['pulls']]
     return document
 
 
@@ -548,8 +665,7 @@ def summary(document: dict) -> str:
 def main(argv: list[str] | None = None, run: status.Runner = status.gh, now: datetime | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', help='OWNER/NAME; defaults to the current repository')
-    parser.add_argument('--state', help='JSON file with what Orchi last reported: crews, mode, questions, merges')
-    parser.add_argument('--previous', help='JSON file with the previous snapshot, to record the cards\' moves')
+    parser.add_argument('--state', help="JSON file with Orchi's live overlay: crews, questions, sent answers")
     parser.add_argument('--json', action='store_true', help='Print the snapshot instead of its summary line')
     args = parser.parse_args(argv)
     now = now or datetime.now().astimezone()
@@ -564,15 +680,8 @@ def main(argv: list[str] | None = None, run: status.Runner = status.gh, now: dat
                 state = {}
             if not isinstance(state, dict):
                 raise ValueError('The board state must be a JSON object: ' + args.state)
-        previous = None
-        if args.previous:
-            try:
-                with open(args.previous, encoding='utf-8') as handle:
-                    previous = json.load(handle)
-            except (FileNotFoundError, ValueError):
-                previous = None
         repo = repo or json.loads(run(['repo', 'view', '--json', 'nameWithOwner']))['nameWithOwner']
-        document = snapshot(repo, collect(repo, run), state, now, previous if isinstance(previous, dict) else None)
+        document = snapshot(repo, collect(repo, run), state, now)
     except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as error:
         detail = str(getattr(error, 'stderr', '') or error).strip()
         document = {'repository': repo, 'updated': now.isoformat(timespec='seconds'), 'error': detail}

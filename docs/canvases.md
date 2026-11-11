@@ -73,11 +73,18 @@ The board is a view of the pool for one repository with two tabs.
 plus `status.py`): the Initiative, Epic, and Task tree, untyped Issues and
 PRs with no Issue, PR checks and size, each Issue's
 [GitHub signals](workflow.md#github-signals) (assignees, linked branches and
-PRs, sub-issues, a plan in the body, `blocked by`), and the question and answer
-comments. It combines them with what Orchi last reported through
-`update_pool`: the crews as the app's session status shows them, the mode, the
-pool size, the questions' `request_id`s and the fields no comment holds, the
-summary, the queue, merges, deferred Issues, and held PRs.
+PRs, sub-issues, a plan in the body, `blocked by`), the issue and PR
+timelines, and the Deferred and Held comments. Anyone with read access builds
+this view from GitHub alone. On the owner's board, the one Orchi reports to
+through `update_pool` in its conversation, it adds what only Orchi knows: the
+crews as the app's session status shows them, the user's open questions with
+their `request_id`s, the Summary, the mode, the pool size, and the Issues a
+planner keeps queued. These reports stay in the app and never reach GitHub.
+
+Every other board is read-only: it shows the work, its columns, and its PRs,
+but no crews, questions, Summary, or mode, and no buttons or drags; its HTTP
+server refuses requests. Its Crews tab says that crews are on the owner's
+board and lists the planned work nobody holds.
 
 Each Task card takes one column from the real state, in this order:
 
@@ -90,12 +97,13 @@ Each Task card takes one column from the real state, in this order:
 6. A Task with sub-issues or a plan in its body, or a PR: Backlog.
 7. Otherwise: Needs planning.
 
-Orchi may name a column (`stages`) only where GitHub does not show the work
-yet. An Epic or Initiative takes the first column its cards reach in the order
+An Epic or Initiative takes the first column its cards reach in the order
 Questions for you, Your review, In progress, Needs planning, Backlog, Done; one
 with no Tasks needs planning. Its progress counts Tasks, and a closed Epic
-counts by its sub-issue summary. Comparing each snapshot with the last adds a
-card's moves to its History; a move from Your review back to In progress is a
+counts by its sub-issue summary. A card's History comes from the GitHub
+timelines: assignments, closing, defer and resume comments, and its PRs
+opened, made ready, approved, sent back by a review or a return to draft, and
+updated after that. A move from Your review back to In progress is a
 back-move.
 
 The board refreshes every five minutes, on Refresh, and after each report. A
@@ -110,7 +118,9 @@ state and does it as if the user typed it, and the card moves when the real
 state does. Answers go through Orchi as the pool reference's
 [Questions and plans](../plugins/orchi/skills/orchi-core/references/pool.md#questions-and-plans)
 says. A sent answer hides its question for up to an hour, until Orchi records
-the answer. The user may drag a card only from Needs planning to Backlog (plan
+the answer. With autonomous mode off or unreported, a PR into the default
+branch that is ready, not held, and not sent back waits for the user's merge.
+The user may drag a card only from Needs planning to Backlog (plan
 it), from Backlog to In progress (take it), or back from In progress to
 Backlog (defer it); any other drop shows `Orchi moves this card when the work
 gets there.`
@@ -152,9 +162,11 @@ delete it when it no longer holds.
 | Decision | Reason | Rejected | Since |
 | --- | --- | --- | --- |
 | The canvases ship in the plugin through the legacy manifest's `extensions` field, a path to a folder of extension subfolders | It is the plugin format's only way to install an extension with the plugin; the CLI plugin reference lists the field, and a test plugin's extension loaded with it. In an Agent Plugins manifest (`$schema`), the field means something else | Asking the user to copy the extension into `~/.copilot/extensions/`; a project extension committed by `setup.py` | [nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4) |
-| The board is a view: GitHub and Orchi's `update_pool` reports are its sources, and its stored files are only a cache to redraw | Git branches and GitHub Issues are the only shared state; a board that held state would become a controller | A board state database; the board changing Issues itself | [nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4) |
+| The board is a view: GitHub and, on the owner's board, Orchi's `update_pool` reports are its sources, and its stored files are only a cache to redraw | Git branches and GitHub Issues are the only shared state; a board that held state would become a controller | A board state database; the board changing Issues itself | [nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4) |
 | A board button sends a sentence into the conversation, and Orchi checks the state before acting on it | Every action keeps one path, through the session that talks to the user and knows the pool's rules | Board actions that call `gh` directly | [nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4) |
-| Orchi keeps the user's open questions as Issue or PR comments ending `<!-- orchi:question {...} -->`, and records each answer as `<!-- orchi:answer {...} -->` | A crew may have several questions open while it goes on, and they must survive restarts; Git branches and GitHub Issues are the only shared state, and a comment also tells people what was asked | A question file or database; holding them only in Orchi's context; one `ask_user` per crew, which stops its work | [nkhus/orchi-copilot#5](https://github.com/nkhus/orchi-copilot/pull/5) |
+| Anyone with read access builds the board's work view from GitHub alone; it is read-only, and only the owner's board, which Orchi reports to, shows crews, questions, the Summary, and the mode, and takes actions | Teammates should see where the work stands without Orchi, while every action keeps one path through the owner's Orchi | A shared board that acts for anyone; a pinned pool Issue holding the Summary, mode, and pool size, which [#7](https://github.com/nkhus/orchi-copilot/issues/7) withdrew so that Orchi leaves no trace in the repository | [nkhus/orchi-copilot#6](https://github.com/nkhus/orchi-copilot/issues/6) |
+| The user's open questions live in Orchi's conversation and its `update_pool` reports, never in Issue or PR comments | Development stays with the agents, and comments in Issues would show Orchi's machinery to everyone; `get_sessions_status` and the crews' reports rebuild them after a restart. This replaces `orchi:question` and `orchi:answer` comments | `orchi:question` and `orchi:answer` comments; a question file or database; one `ask_user` per crew, which stops its work | [nkhus/orchi-copilot#6](https://github.com/nkhus/orchi-copilot/issues/6) |
+| `update_pool` reports only what GitHub cannot show: crews, questions, the Summary, mode, pool size, and a planner's queue; columns, history, merges, deferred, and held work come from GitHub | One source per fact, so every board shows the same work and Orchi's reports cannot drift from it | `stages`, `moves`, `merges`, `deferred`, and `held` in the report | [nkhus/orchi-copilot#6](https://github.com/nkhus/orchi-copilot/issues/6) |
 | Answers from the board go through Orchi: `answer_session_input` with the exact `request_id` and choice, plans through `respond_to_session_plan_v2`, kept questions by message; a tool approval only in the crew's session | Orchi checks the question is still open and keeps one path for the user's answers; the app lets only the asking session answer a tool approval | The board answering sessions itself | [nkhus/orchi-copilot#5](https://github.com/nkhus/orchi-copilot/pull/5) |
 | Cards move from the real state; the user may drag only Needs planning → Backlog, Backlog → In progress, and In progress → Backlog, each a request | The other columns mean something happened (a question, a ready PR, a merge) that a drag cannot make true | Free drag-and-drop that edits labels | [nkhus/orchi-copilot#5](https://github.com/nkhus/orchi-copilot/pull/5) |
 | The Orchi Summary is prose: Orchi's answer to "How are things going?" in a few short paragraphs with a bold lead each, not labelled fields | The user wants to read where things stand, what is stuck and why, and what waits for them, the way a lead would tell it; fixed labels left gaps and repeated the crew list | Labelled lines (Progress, Waits on you, Risks, Next, Today); a progress bar | [nkhus/orchi-copilot#5](https://github.com/nkhus/orchi-copilot/pull/5) |
