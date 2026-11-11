@@ -30,6 +30,9 @@ the Claude Code edition. Setup must not copy it into another project's
 - Installed files must not link outside `plugins/orchi/skills/`, and must not
   depend on repository-root tools or documentation. Documentation may link into
   `plugins/`.
+- A change under `plugins/` raises the version in `plugins/orchi/plugin.json`
+  and `.github/plugin/marketplace.json`: patch for fixes, minor for new
+  behavior.
 - Bundled scripts use only the Python standard library.
 - Under `plugins/`, the word "claude" appears only in model IDs.
 - Preserve the core flow: research and agree scope with the user before

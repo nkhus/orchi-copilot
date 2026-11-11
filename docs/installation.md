@@ -50,12 +50,15 @@ In the app, **Customize** → **Installed** has a toggle that turns the plugin o
 or off. With the Copilot CLI:
 
 ```bash
-copilot plugin update orchi
+copilot plugin update orchi@orchi-copilot
 copilot plugin disable orchi
 copilot plugin enable orchi
 copilot plugin uninstall orchi
 copilot plugin marketplace remove orchi-copilot
 ```
+
+After an update, start a new session or restart the app so the updated skills
+and canvases load.
 
 `marketplace remove` refuses while a plugin from the marketplace is installed;
 `--force` uninstalls it too. Removing the plugin leaves each repository's setup
@@ -194,6 +197,14 @@ its one plugin's source is `./plugins/orchi`. Copilot installs it under
 and custom agents take precedence over a plugin's with the same name (the first
 one found wins; skills are matched by their `name`, agents by file name), so a
 repository with its own `orchi-*` skill or agent shadows Orchi's.
+
+### Versioning
+
+Every change under `plugins/` raises the semantic version in
+`plugins/orchi/plugin.json` and `.github/plugin/marketplace.json`; CI fails a
+pull request that changes the plugin without it. `copilot plugin update`
+reports a plugin whose version did not change as already at the latest
+version, so without a bump an update looks like nothing happened.
 
 ### Neutral repository footprint
 

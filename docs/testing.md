@@ -37,6 +37,9 @@ python -m pytest -q
 - Python syntax, standard-library-only scripts, and JSON and YAML syntax;
 - English text: no Cyrillic, no release markers that pair `Orchi` with a version
   number, and under `plugins/` the word "claude" only in model IDs;
+- with `--base <ref>`, which CI passes on pull requests: when anything under
+  `plugins/` changed since that ref, the version in `plugin.json` is higher than
+  the one there;
 - `pyproject.toml` holds tool settings only, with no `[project]` or
   `[build-system]` table.
 
