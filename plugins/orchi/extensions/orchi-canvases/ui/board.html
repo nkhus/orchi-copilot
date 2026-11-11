@@ -43,8 +43,7 @@ textarea{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);bor
 .send{display:flex;gap:8px;align-items:center;margin-top:10px}.send .muted{font-size:12px;flex:1}
 .hist div{font-size:13px;padding:3px 0;display:flex;gap:10px}.hist .tm{color:var(--muted);width:44px;flex:none}.hist .b{color:var(--orange)}.ok{color:var(--green)}
 .syn{margin-top:30px;padding-top:18px;border-top:1px solid var(--line)}.syn .hd{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}.syn .hd b{font-size:15px;flex:1}.syn .hd span{font-size:12px;color:var(--muted)}
-.syn .sl{display:grid;grid-template-columns:96px 1fr;gap:8px 14px;line-height:21px}.syn .sl .lab{font-size:12px;font-weight:600;color:var(--muted);padding-top:1px}
-.pbar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--line);margin:4px 0 2px;max-width:320px}.pbar i{background:var(--green)}.pbar i+i{background:var(--blue)}
+.syn p{margin:0 0 10px;line-height:22px;max-width:72ch}.syn .ref{color:var(--blue);cursor:pointer;white-space:nowrap}
 /* board */
 .crumbs{font-size:13px;margin:16px 0 0;color:var(--muted)}.crumbs b{color:var(--fg);font-weight:600}
 .kb{display:grid;grid-template-columns:repeat(6,minmax(140px,1fr));gap:8px;overflow-x:auto}
@@ -192,16 +191,36 @@ function badge(name) {
 function doing(crew) {
   return crew.doing || crew.question || (crew.background && "Background: " + crew.background) || crew.stuck || ref(crew.issue) || "";
 }
+function pathOf(number) {
+  const board = snap?.board || {};
+  const task = (board.tasks || []).find((card) => card.number === number) || (board.tasks || []).find((card) => card.pull?.number === number);
+  if (task) return link("board", task.group, groupOf(task.group)?.kind === "Initiative" && task.epic ? task.epic : "-", task.number);
+  const epic = (board.epics || []).find((item) => item.number === number);
+  if (epic) return link("board", epic.group, number);
+  const group = (board.groups || []).find((item) => item.number === number);
+  return group ? link("board", group.key) : "";
+}
+function prose(text) {
+  // Crews by full name or by the short name after their role, e.g. "saved-carts" for "[dev-lead] saved-carts".
+  const names = new Map();
+  for (const crew of [orchiRow(), ...crews()].filter((item) => item.name)) {
+    names.set(esc(crew.name), crew.name);
+    const short = crew.name.replace(/^\[[^\]]*\]\s*/, "");
+    if (short !== crew.name && !names.has(esc(short))) names.set(esc(short), crew.name);
+  }
+  const words = [...names.keys()].sort((a, b) => b.length - a.length).map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return esc(text).replace(new RegExp(`(?<![\\w-])(?:${words.join("|")})(?![\\w-])|#\\d+\\b`, "g"), (match) => {
+    const go = names.has(match) ? link("crews", names.get(match)) : pathOf(+match.slice(1));
+    return go ? `<span class="ref" data-go="${esc(go)}">${match}</span>` : match;
+  });
+}
 function summaryBlock() {
   const summary = snap?.summary || {};
-  const cards = tasks(() => true), total = cards.length || 1;
-  const lines = [["Progress", summary.progress], ["Waits on you", summary.waits], ["Risks", summary.risks], ["Next", summary.next], ["Today", summary.today]].filter(([, text]) => text);
+  const paragraphs = (summary.paragraphs || []).filter((item) => item && (item.lead || item.text));
   const head = `<div class="hd"><b>Summary</b><span>${summary.at ? "by Orchi · " + hm(summary.at) : "by Orchi"}</span><button class="small" data-summary>Refresh</button></div>`;
-  if (!lines.length) return `<div class="syn">${head}<div class="muted" style="font-size:13px">Orchi writes the summary here when it reports the pool.</div></div>`;
-  return `<div class="syn">${head}<div class="sl">` + lines.map(([label, text]) => {
-    const extra = label === "Progress" ? `<div class="pbar"><i style="width:${100 * count(cards, "done") / total}%"></i><i style="width:${100 * count(cards, "review") / total}%"></i></div>` : "";
-    return `<span class="lab">${label}</span><span${label === "Today" ? ' class="muted"' : ""}>${esc(text)}${extra}</span>`;
-  }).join("") + `</div></div>`;
+  if (!paragraphs.length) return `<div class="syn">${head}<div class="muted" style="font-size:13px">Orchi writes the summary here when it reports the pool.</div></div>`;
+  return `<div class="syn">${head}` + paragraphs.map((item) => `<p>${item.lead ? `<b>${prose(item.lead)}</b> ` : ""}${prose(item.text || "")}</p>`).join("") +
+    (summary.since ? `<p class="muted" style="font-size:13px">${prose(summary.since)}</p>` : "") + `</div>`;
 }
 function crewList() {
   const list = [orchiRow(), ...crews()].sort((a, b) => CREW_ORDER.indexOf(a.state) - CREW_ORDER.indexOf(b.state));

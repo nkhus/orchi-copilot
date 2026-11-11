@@ -1,5 +1,6 @@
 """The canvases extension's pure modules under Node: request sentences, design rounds, and the loopback server."""
 import json
+import re
 import shutil
 import subprocess
 
@@ -79,6 +80,39 @@ console.log(JSON.stringify({
     assert result['back'].startswith('Send PR #30 back with these changes: Add a test.')
     assert result['open'].startswith('Open the session of [dev-lead] pay for me.')
     assert result['summary'].startswith('Refresh the pool summary on the board.')
+
+
+def page_functions(*names):
+    """The source of board.html's named top-level functions and one-line constants, to run them without a browser."""
+    page = (ROOT / 'plugins/orchi/extensions/orchi-canvases/ui/board.html').read_text(encoding='utf-8')
+    parts = []
+    for name in names:
+        start = re.search(rf'^(?:function {name}\(|const {name} = )', page, re.M).start()
+        end = page.index('\n}\n', start) + 2 if page.startswith('function', start) else page.index('\n', start)
+        parts.append(page[start:end])
+    return '\n'.join(parts) + '\n'
+
+
+def test_summary_prose_links_issues_prs_and_crews(tmp_path):
+    result = run(tmp_path, page_functions('esc', 'link', 'groupOf', 'pathOf', 'prose') + '''
+const snap = {board: {
+  groups: [{key: "40", number: 40, kind: "Initiative"}, {key: "outside", kind: "Outside"}],
+  epics: [{number: 44, group: "40"}],
+  tasks: [{number: 71, group: "40", epic: 44, pull: {number: 70}}, {number: 91, group: "outside", epic: null}]}};
+const orchiRow = () => ({name: "Orchi"});
+const crews = () => [{name: "[dev-lead] saved-carts"}, {name: "[worker] tax-rates"}];
+const refs = (html) => [...html.matchAll(/data-go="([^"]*)">([^<]*)</g)].map((m) => [m[2], decodeURIComponent(m[1])]);
+console.log(JSON.stringify({
+  linked: refs(prose("saved-carts merged PR #70 for #44; #91 is next, #40 is on track, Orchi waits.")),
+  plain: prose("#12 and saved-cartsX and <b>tax-rates</b> & [worker] tax-rates"),
+}));''')
+    assert result['linked'] == [
+        ['saved-carts', '#crews/[dev-lead] saved-carts'], ['#70', '#board/40/44/71'], ['#44', '#board/40/44'],
+        ['#91', '#board/outside/-/91'], ['#40', '#board/40'], ['Orchi', '#crews/Orchi']]
+    plain = result['plain']
+    assert plain.startswith('#12 and saved-cartsX and &lt;b&gt;')
+    assert '<span class="ref" data-go="#crews/%5Bworker%5D%20tax-rates">tax-rates</span>&lt;/b&gt; &amp; ' in plain
+    assert plain.endswith('<span class="ref" data-go="#crews/%5Bworker%5D%20tax-rates">[worker] tax-rates</span>')
 
 
 def test_variant_paths_stay_inside_the_board(tmp_path):

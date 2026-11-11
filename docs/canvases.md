@@ -44,8 +44,12 @@ The board is a view of the pool for one repository with two tabs.
   in the background, idle, free), each with its status, what it does, since
   when, and an `N questions` badge, orange when one blocks work. Below it, the
   queue, the pool size, and the autonomous mode the user can switch, then the
-  Orchi Summary in labelled lines (Progress, Waits on you, Risks, Next, Today),
-  which Orchi writes and the user can ask to refresh.
+  Orchi Summary: Orchi's answer in a few short paragraphs to "How are things
+  going?" (what moved forward, what is in progress, what is stuck and why,
+  problems or risks, what waits for the user, and what comes next), each
+  opening with one bold sentence, then a muted line on what changed today. The
+  board links each `#<n>` to its card and each crew name to its page, and the
+  user can ask Orchi to refresh the summary.
 - **A crew's page:** all its open questions in one list, each with its
   context, options with their consequences, the crew's recommendation, an
   optional note, and Send answer; a question that does not block work shows
@@ -151,6 +155,7 @@ delete it when it no longer holds.
 | Orchi keeps the user's open questions as Issue or PR comments ending `<!-- orchi:question {...} -->`, and records each answer as `<!-- orchi:answer {...} -->` | A crew may have several questions open while it goes on, and they must survive restarts; Git branches and GitHub Issues are the only shared state, and a comment also tells people what was asked | A question file or database; holding them only in Orchi's context; one `ask_user` per crew, which stops its work | [nkhus/orchi-copilot#5](https://github.com/nkhus/orchi-copilot/pull/5) |
 | Answers from the board go through Orchi: `answer_session_input` with the exact `request_id` and choice, plans through `respond_to_session_plan_v2`, kept questions by message; a tool approval only in the crew's session | Orchi checks the question is still open and keeps one path for the user's answers; the app lets only the asking session answer a tool approval | The board answering sessions itself | [nkhus/orchi-copilot#5](https://github.com/nkhus/orchi-copilot/pull/5) |
 | Cards move from the real state; the user may drag only Needs planning → Backlog, Backlog → In progress, and In progress → Backlog, each a request | The other columns mean something happened (a question, a ready PR, a merge) that a drag cannot make true | Free drag-and-drop that edits labels | [nkhus/orchi-copilot#5](https://github.com/nkhus/orchi-copilot/pull/5) |
+| The Orchi Summary is prose: Orchi's answer to "How are things going?" in a few short paragraphs with a bold lead each, not labelled fields | The user wants to read where things stand, what is stuck and why, and what waits for them, the way a lead would tell it; fixed labels left gaps and repeated the crew list | Labelled lines (Progress, Waits on you, Risks, Next, Today); a progress bar | [nkhus/orchi-copilot#5](https://github.com/nkhus/orchi-copilot/pull/5) |
 | A request waits five seconds with Undo before it is sent | A click in a side panel is easy to make by mistake, and a sent message cannot be taken back | A confirm dialog per action | [nkhus/orchi-copilot#5](https://github.com/nkhus/orchi-copilot/pull/5) |
 | Deferred Issues and held PRs are recorded as comments (`Deferred at the user's request on <date>`, `Resumed ...`, `Held ...`) | They must survive a restart, and GitHub holds every fact the pool relies on | Labels, which would need setup in each repository; a notes file | [nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4) |
 | Each canvas's server binds to loopback with a random path token and a `Host` check, and accepts only JSON POSTs; variants run sandboxed without same-origin access | A button sends messages in the user's name, so no other local process, page, or variant may reach it | An unauthenticated loopback server; variants in same-origin frames | [nkhus/orchi-copilot#4](https://github.com/nkhus/orchi-copilot/issues/4) |

@@ -30,8 +30,11 @@ and answers on the board are requests to Orchi.
      and the other fields (`crew`, `issue`, `kind`, `blocking`, `assumed`, `text`, `context`, `choices`, `plan`,
      `links`, `asked`) for a question no comment holds yet, such as a tool approval or a crew's `ask_user`. The
      board joins them by `id` with the question comments.
-   - `summary`: one line each for `progress`, `waits` (what waits on the user and what it unblocks), `risks`, `next`,
-     and `today` (what merged and was answered), with `at`.
+   - `summary`: your answer to "How are things going?" as `paragraphs` (each a bold `lead` sentence and its `text`),
+     `since` (one line on what merged, was answered, or closed today), and `at`. In a few short paragraphs, say what
+     moved forward, what is in progress, what is stuck and why, problems or risks, what waits for the user and what it
+     unblocks, and what comes next. Write calm, concrete prose; name Issues and PRs as `#<n>` and crews by name (the
+     board links both); when nothing is stuck or at risk, say so plainly instead of leaving it out.
    - `mode`, `limit`, `merges` (PRs waiting for the user's yes), `deferred`, `held`, and `queue` (`issue`, `action`,
      `title`: work that starts when a crew is free).
    - `stages` (number → column) only where GitHub does not show where the work is yet, and `moves` (`number`, `to`,

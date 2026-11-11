@@ -72,8 +72,18 @@ const POOL_SCHEMA = object({
     deferred: { type: "array", items: { type: "integer" }, description: "Issues the user deferred." },
     held: { type: "array", items: { type: "integer" }, description: "PRs the user put on hold." },
     summary: object({
-        progress: { type: "string" }, waits: { type: "string" }, risks: { type: "string" },
-        next: { type: "string" }, today: { type: "string" }, at: { type: "string", description: "ISO time." },
+        paragraphs: {
+            type: "array",
+            description: "Orchi's answer to \"How are things going?\" in a few short paragraphs: what moved forward, " +
+                "what is in progress, what is stuck and why (or plainly that nothing is), problems or risks, what " +
+                "waits for the user, and what comes next.",
+            items: object({
+                lead: { type: "string", description: "Its point in one short sentence, shown in bold." },
+                text: { type: "string", description: "The rest, naming Issues and PRs as #<n> and crews by name." },
+            }, ["text"]),
+        },
+        since: { type: "string", description: "One line on what changed today: PRs merged, questions answered, Epics closed." },
+        at: { type: "string", description: "ISO time." },
     }),
     stages: {
         type: "object",
