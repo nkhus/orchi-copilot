@@ -346,7 +346,8 @@ them), no unanswered question. It returns its worktree to a detached `origin/<de
 created whose work is merged, and replies `<name> released`, or `<name> not released: <reason>`.
 
 On `released`, the owner archives the session with `archive_session`, which removes its worktree and keeps its
-history, so the user can restore it. The app archives only a finished child with no open PR, no ongoing work, no
+history, so the user can restore it; when Agent Merge is still on for it, Orchi first turns it off with
+`manage_agent_merge` (`enabled: false`). The app archives only a finished child with no open PR, no ongoing work, no
 active Agent Merge, and no automation; when it refuses, the owner tells its own owner (Orchi tells the user) which
 session and the app's reason, and does not retry. Nobody deletes a session, and no session archives one it did not
 start or that replied `not released`.
