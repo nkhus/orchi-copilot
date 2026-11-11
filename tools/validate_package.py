@@ -16,7 +16,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = 'plugins/orchi'
 SCRIPTS = PLUGIN + '/skills/orchi-core/scripts'
-SKILLS = ('orchi', 'orchi-core', 'orchi-explore', 'orchi-plan', 'orchi-standards', 'orchi-deliver', 'orchi-work',
+SKILLS = ('orchi', 'orchi-core', 'orchi-explore', 'orchi-plan', 'orchi-standards', 'orchi-deliver',
           'orchi-design')
 # The user types only /orchi; every other skill is loaded by the model for a session's role and hidden from the menu.
 ENTRY = {'orchi'}

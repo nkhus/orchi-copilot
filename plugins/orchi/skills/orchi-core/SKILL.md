@@ -10,9 +10,9 @@ Orchi is a development convention. Git stores code and documentation; GitHub Iss
 dependencies, and status. There is no controller, state database, approval receipt, or mandatory command facade.
 
 The user talks only to Orchi, their Orchi Copilot Project (or `/orchi`): Orchi routes every request to a crew of its
-session pool, and crews give repository work to their workers. A session that is none of these answers questions and
+session pool, one crew per role, and crews give repository work to writer subagents. A session that is none of these answers questions and
 documentation lookups only; for anything to plan, build, or change it tells the user to bring it to Orchi. Identify
-your role (Orchi, a crew, a worker, or a reader), inspect branch and worktree changes, read the relevant issue and PR,
+your role (Orchi, a crew, or a reader), inspect branch and worktree changes, read the relevant issue and PR,
 and resume existing work instead of duplicating it. Repository instructions (AGENTS.md, scoped files) take precedence.
 Preserve the user's request, decisions, and edits.
 
@@ -79,13 +79,13 @@ Read only the reference needed for the current stage.
 | Keep documentation and decisions current; working documents; reconcile branches | [Knowledge](references/knowledge.md) |
 | Create, relate, or close Issues; PR conventions | [GitHub conventions](references/github.md) |
 | Search or read documentation; validate links | [Retrieval](references/retrieval.md) |
-| Run Orchi, crews, and workers as a session pool; the board, the design board, and pages beside the conversation | [Pool](references/pool.md), [Canvases](references/canvases.md) |
+| Run Orchi and its crews as a session pool; the board, the design board, and pages beside the conversation | [Pool](references/pool.md), [Canvases](references/canvases.md) |
 
 ## Entry skills and subagents
 
 `orchi` is the entry the user types. Crews run `orchi-explore` (idea → Exploration), `orchi-plan` (request → ready
 Issues), `orchi-standards` (standards audit or hardening), `orchi-design` (Design Epic → PR), and `orchi-deliver`
-(Issue → PR); workers run `orchi-work`. They are hidden from the menu. Sessions may start the plugin's custom agents
+(Issue → PR). They are hidden from the menu. Sessions may start the plugin's custom agents
 with `task` ([roles](references/roles.md)): `orchi-scout` retrieves, `orchi-researcher` researches and designs options
 for an exploration, `orchi-implementer` executes one ready Task, `orchi-fixer` makes one small, fully specified change
 (a simple Task or a confirmed defect repair), `orchi-designer` builds variants for a design round, executes one ready UI

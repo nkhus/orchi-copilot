@@ -100,19 +100,19 @@ const snap = {board: {
   epics: [{number: 44, group: "40"}],
   tasks: [{number: 71, group: "40", epic: 44, pull: {number: 70}}, {number: 91, group: "outside", epic: null}]}};
 const orchiRow = () => ({name: "Orchi"});
-const crews = () => [{name: "[dev-lead] saved-carts"}, {name: "[worker] tax-rates"}];
+const crews = () => [{name: "[dev-lead] saved-carts"}, {name: "[designer] tax-rates"}];
 const refs = (html) => [...html.matchAll(/data-go="([^"]*)">([^<]*)</g)].map((m) => [m[2], decodeURIComponent(m[1])]);
 console.log(JSON.stringify({
   linked: refs(prose("saved-carts merged PR #70 for #44; #91 is next, #40 is on track, Orchi waits.")),
-  plain: prose("#12 and saved-cartsX and <b>tax-rates</b> & [worker] tax-rates"),
+  plain: prose("#12 and saved-cartsX and <b>tax-rates</b> & [designer] tax-rates"),
 }));''')
     assert result['linked'] == [
         ['saved-carts', '#crews/[dev-lead] saved-carts'], ['#70', '#board/40/44/71'], ['#44', '#board/40/44'],
         ['#91', '#board/outside/-/91'], ['#40', '#board/40'], ['Orchi', '#crews/Orchi']]
     plain = result['plain']
     assert plain.startswith('#12 and saved-cartsX and &lt;b&gt;')
-    assert '<span class="ref" data-go="#crews/%5Bworker%5D%20tax-rates">tax-rates</span>&lt;/b&gt; &amp; ' in plain
-    assert plain.endswith('<span class="ref" data-go="#crews/%5Bworker%5D%20tax-rates">[worker] tax-rates</span>')
+    assert '<span class="ref" data-go="#crews/%5Bdesigner%5D%20tax-rates">tax-rates</span>&lt;/b&gt; &amp; ' in plain
+    assert plain.endswith('<span class="ref" data-go="#crews/%5Bdesigner%5D%20tax-rates">[designer] tax-rates</span>')
 
 
 def test_variant_paths_stay_inside_the_board(tmp_path):

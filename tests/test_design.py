@@ -45,7 +45,7 @@ def test_ui_readiness_items_have_form_fields():
 def test_designer_crew_role_routing_and_mode_agree():
     pool, design = reference("pool"), skill("orchi-design")
     assert "| Designer | `orchi-design` | One standalone Design Epic, with the user |" in pool
-    assert '"Take #n" on a planned Design Epic | Designer | `orchi-design`' in pool
+    assert "| A ready Design Epic, planned or named by the user | Designer | `orchi-design` with `#<n>` |" in pool
     assert "Only the user names references, chooses the engine and a direction, and approves a comp or a generated asset, or Orchi in autonomous mode" in design
     assert "Continue with [orchi-deliver](../orchi-deliver/SKILL.md)" in design
     assert "Ask the user directly while autonomous mode is off, and Orchi while it is on" in design and "Take your Issue as the pool's" in design
@@ -84,7 +84,6 @@ def test_design_outputs_that_bind_later_work_pass_the_user():
     assert "Commit the brief on the work's branch, which planning creates now" in planning
     assert "impeccable" not in planning.lower()
     assert "the branch of work at design depth brief" in skill("orchi-plan")
-    assert "for a `decision` `ESCALATE`" in skill("orchi-work")
     assert "surface briefs and approved comps in `docs/design/surfaces/`" in reference("knowledge")
 
 
@@ -162,7 +161,7 @@ def test_prototype_mode_interviews_through_a_living_prototype_and_keeps_every_la
     assert "| Ideas | Every idea the user raised and parked" in exploration
     assert "id: ideas" in form("exploration.yml")
     assert "`Mode: prototype`" in explore and "keep interviewing while they work" in explore
-    assert "report `<id> now researcher`" in explore and "take Orchi's `<id> remark:`" in explore
+    assert "report `<id> shaped: #<n>`" in explore and "take Orchi's `<id> remark:`" in explore
     assert "in prototype mode, a direction in one line instead" in agent
     assert "To change a mockup, copy it into the output folder and change only what the remarks name." in agent
 

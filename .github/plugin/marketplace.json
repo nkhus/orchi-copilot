@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "Orchi for the GitHub Copilot app: research, agree scope, and deliver reviewed, tested, documented pull requests through Git branches and GitHub Issues.",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "plugins": [
     {
       "name": "orchi",
       "description": "Orchi turns a Copilot Project into a product manager for one repository: it routes each request to a child session per role and delivers reviewed, tested, documented pull requests through Git branches and GitHub Issues.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "source": "./plugins/orchi",
       "homepage": "https://github.com/nkhus/orchi-copilot",
       "repository": "https://github.com/nkhus/orchi-copilot",

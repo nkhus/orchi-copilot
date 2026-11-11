@@ -117,7 +117,7 @@ def test_exploration_form_answers_initiative_readiness_before_planning():
         text = flat(attributes["label"] + " " + attributes.get("description", "")).casefold()
         for phrase in phrases:
             assert phrase in text, f"Initiative item {number} is not prepared by exploration field {field}: {phrase!r}"
-    assert "continues into planning with this Issue" in flat(load("exploration")["body"][0]["attributes"]["value"])
+    assert "Orchi gives this Issue to a planner crew" in flat(load("exploration")["body"][0]["attributes"]["value"])
 
 
 def test_templates_point_to_the_readiness_reference():

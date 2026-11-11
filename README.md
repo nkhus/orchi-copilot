@@ -102,18 +102,19 @@ flowchart LR
     O -->|merge?| U
 ```
 
-**Orchi routes; it never does the work itself.** Each request gets its own
-crew, a child session of the Project in its own worktree, named after its role
-and topic (for example `[planner] csv-export`). The Project lists its crews by
-state, and a crew's questions show in Orchi's conversation. A dev lead or
-designer crew gives every change to a writer subagent, or to a worker session
-of its own for parallel Tasks and long runs, and reviews the result. Agent Merge
+**Orchi routes; it never does the work itself.** Each role a request needs
+gets its own crew, a child session of the Project in its own worktree, named
+after its role and topic (for example `[planner] csv-export`). Only Orchi starts
+sessions. The Project lists its crews by state, and a crew's questions show in
+Orchi's conversation. A dev lead or designer crew gives every change to a writer
+subagent, in its own worktree or, for parallel Tasks, a task worktree, and
+reviews the result. Agent Merge
 keeps a ready PR moving, and Orchi merges it on your yes. When the work is done,
 Orchi archives the crew.
 
-**Work moves forward on its own.** A researcher who finishes shaping an idea
-continues as its planner, and a planner continues with the first ready item it
-planned. A dev lead that finds work outside its scope files it, and Orchi gives
+**Work moves forward on its own.** When a researcher finishes shaping an idea,
+Orchi starts a planner for it; when a planner finishes, Orchi starts a dev lead
+or designer for each ready item, in parallel when nothing blocks them. A dev lead that finds work outside its scope files it, and Orchi gives
 it to a planner.
 
 **The ceremony scales with the work:**
@@ -187,13 +188,12 @@ assistant can work in the same repository without knowing about Orchi.
 
 | Skill | Run by | Does |
 | --- | --- | --- |
-| [`orchi`](plugins/orchi/skills/orchi/SKILL.md) | You (the Project, or `/orchi [request]`) | Makes the conversation Orchi: prepares the repository, starts a crew per request, relays what crews report, and tells you only about decisions, merges, and waiting questions |
-| [`orchi-explore`](plugins/orchi/skills/orchi-explore/SKILL.md) | Researcher crew | Shapes an idea with you in an `Explore:` Issue and an `explore/<slug>` branch, then continues into planning |
+| [`orchi`](plugins/orchi/skills/orchi/SKILL.md) | You (the Project, or `/orchi [request]`) | Makes the conversation Orchi: prepares the repository, starts a crew per role a request needs, relays what crews report, and tells you only about decisions, merges, and waiting questions |
+| [`orchi-explore`](plugins/orchi/skills/orchi-explore/SKILL.md) | Researcher crew | Shapes an idea with you in an `Explore:` Issue and an `explore/<slug>` branch, then hands it back to Orchi for a planner |
 | [`orchi-plan`](plugins/orchi/skills/orchi-plan/SKILL.md) | Planner crew | Proposes a scope, clarifies, shows the breakdown, and creates Issues planned for delivery |
 | [`orchi-standards`](plugins/orchi/skills/orchi-standards/SKILL.md) | Planner crew | Audits an existing project's checks and plans a standards Epic, or plans hardening |
 | [`orchi-design`](plugins/orchi/skills/orchi-design/SKILL.md) | Designer crew | Runs a Design Epic with you: references, engine and direction rounds, an approved comp per surface, and the builds |
-| [`orchi-deliver`](plugins/orchi/skills/orchi-deliver/SKILL.md) | Dev lead crew | Delivers a Task, Epic, or Initiative through writer subagents, one review, and a PR; never merges into `main` itself |
-| [`orchi-work`](plugins/orchi/skills/orchi-work/SKILL.md) | A worker session, started by a crew for one task | Implements, fixes, or designs one Task, runs long checks, merges a conflicting base, or answers one research question |
+| [`orchi-deliver`](plugins/orchi/skills/orchi-deliver/SKILL.md) | Dev lead crew | Delivers a Task or an Epic, or integrates an Initiative whose Epics are closed, through writer subagents, one review, and a PR; never merges a PR itself |
 | [`orchi-core`](plugins/orchi/skills/orchi-core/SKILL.md) | Every Orchi session | The workflow: scope, readiness, execution, testing, review, knowledge, standards, and the pool |
 
 </details>

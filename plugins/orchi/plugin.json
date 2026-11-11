@@ -1,7 +1,7 @@
 {
   "name": "orchi",
   "description": "Orchi turns a Copilot Project into a product manager for one repository: it routes each request to a child session per role and delivers reviewed, tested, documented pull requests through Git branches and GitHub Issues.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "nkhus",
     "url": "https://github.com/nkhus"

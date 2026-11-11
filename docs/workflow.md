@@ -61,7 +61,7 @@ ones a person sets:
 | Design Epic | An Epic whose UI design section starts with `Design Epic:` |
 
 Orchi takes an Issue by assigning the owner and pushing the work branch; the
-branch is the worker record. It never writes claim lines, process labels, or a
+branch is the work record. It never writes claim lines, process labels, or a
 pinned pool Issue; crew names, the Summary, the mode, and the pool size appear
 only on the owner's [board](canvases.md). `scripts/status.py` reads these
 signals, and its `taken`, `planned`, and `stage` helpers are shared with the

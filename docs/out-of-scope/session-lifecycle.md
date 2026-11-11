@@ -12,7 +12,7 @@ pasted command is a manual step that a kickoff prompt replaces.
 
 ## Instead
 
-Orchi starts a crew per request with `create_session`, whose kickoff prompt
+Orchi starts a crew per role with `create_session`, whose kickoff prompt
 carries the assignment, so the session invokes its skill itself. When the work
 is done, Orchi sends `release`; the crew confirms nothing would be lost and
 replies `released`, and Orchi archives it with `archive_session`. Archiving is
