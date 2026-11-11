@@ -98,9 +98,34 @@ def validate_manifests(root: Path) -> list[str]:
         errors.append('plugin.json uses the Copilot plugin format, not Agent Plugins ($schema)')
     if set(plugin) - PLUGIN_KEYS:
         errors.append('plugin.json has undocumented fields: ' + ', '.join(sorted(set(plugin) - PLUGIN_KEYS)))
-    for field in ('agents', 'skills'):
+    for field in ('agents', 'skills', 'extensions'):
         if not (root / PLUGIN / str(plugin.get(field, ''))).is_dir():
             errors.append(f'plugin.json {field} path does not exist')
+    return errors
+
+
+def validate_extensions(root: Path) -> list[str]:
+    """Canvas extensions run as Node processes that speak JSON-RPC over stdout and serve loopback pages."""
+    errors = []
+    base = root / PLUGIN / 'extensions'
+    for folder in sorted(p for p in base.iterdir() if p.is_dir()) if base.is_dir() else []:
+        name = folder.relative_to(root).as_posix()
+        if not (folder / 'extension.mjs').is_file():
+            errors.append(name + ': an extension needs extension.mjs')
+        if any(p.name in {'package.json', 'node_modules'} for p in folder.rglob('*')):
+            errors.append(name + ': the Copilot CLI resolves the SDK; ship no package.json or node_modules')
+        for script in sorted(folder.rglob('*.mjs')):
+            rel, text = script.relative_to(root).as_posix(), script.read_text(encoding='utf-8')
+            if re.search(r'\bconsole\.', text):
+                errors.append(rel + ': console output corrupts the JSON-RPC stream; use session.log')
+            for listen in re.findall(r'\.listen\(([^)]*)\)', text):
+                if not re.match(r'\s*0\s*,\s*["\']127\.0\.0\.1["\']', listen):
+                    errors.append(rel + ': servers listen on 127.0.0.1 port 0 only')
+            if re.search(r'\bname:\s*["\']canvas\.', text):
+                errors.append(rel + ': action names starting with canvas. are reserved')
+            for module in re.findall(r'\bfrom\s+["\']([^"\']+)["\']', text):
+                if not module.startswith(('./', '../', 'node:', '@github/copilot-sdk/')):
+                    errors.append(rel + ': extensions import only node:, the Copilot SDK, and their own files: ' + module)
     return errors
 
 
@@ -197,7 +222,7 @@ def validate(root: Path = ROOT) -> dict:
     source_files = files(root)
     paths = [p.relative_to(root).as_posix() for p in source_files]
     bundled = {p.stem for p in (root / SCRIPTS).glob('*.py')}
-    errors += validate_manifests(root) + validate_skills(root) + validate_agents(root)
+    errors += validate_manifests(root) + validate_skills(root) + validate_agents(root) + validate_extensions(root)
     for file, rel in zip(source_files, paths):
         try:
             text = file.read_text(encoding='utf-8')
