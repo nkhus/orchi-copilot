@@ -4,10 +4,11 @@ Orchi is a plugin, `orchi`, in the `orchi-copilot` marketplace of this
 repository; its ID is `orchi@orchi-copilot`. The plugin holds the skills and
 custom agents, and every workflow instruction lives there. The first time Orchi
 starts in a repository, it prepares that repository with `setup.py`, which
-writes tool-neutral development rules, documentation and standards checks, and
-the type labels. Nothing it writes names Orchi or requires it: a developer
-working with another assistant, or none, follows the same rules without knowing
-Orchi is in use.
+writes tool-neutral development rules and documentation and standards checks.
+Nothing it writes names Orchi or requires it, or prescribes how work is
+tracked: a developer working with another assistant, or none, follows the same
+rules without knowing Orchi is in use. Orchi's own process, including tracking
+work in GitHub Issues and the type labels, stays in the plugin.
 
 ## Requirements
 
@@ -81,9 +82,9 @@ where `<orchi-core>` is the orchi-core skill's base directory, for example
 | --- | --- |
 | `--project PATH` | The repository to prepare; by default the Git top level of the current directory |
 | `--dry-run` | Prints each change as `Would …` and writes nothing |
-| `--check` | Like `--dry-run`, but exits 1 when a committed file or a label would change; Orchi runs it on every start |
+| `--check` | Like `--dry-run`, but exits 1 when a committed file or an earlier setup's label would change; Orchi runs it on every start |
 | `--replace` | Overwrites managed files and sections someone edited, and files setup did not create |
-| `--no-labels` | Neither checks nor changes labels |
+| `--no-labels` | Leaves the earlier setup's labels as they are ([migration](#migrating-an-earlier-setup)) |
 | `--paths` | Prints every path setup writes or removes, the earlier setup's included, and exits |
 | `--exclude` | Only adds `.orchi-tmp/` to this clone's Git exclude file, and exits |
 | `--docs-workflow`, `--no-docs-workflow` | Writes (the default) or removes the documentation check and its script |
@@ -93,7 +94,7 @@ It writes:
 
 | Path | Kind | Content |
 | --- | --- | --- |
-| `AGENTS.md` | Managed section | `## Development rules`: agree scope first, track work in Issues and PRs, leave taken Issues to their owner, follow `ENGINEERING.md`, update the documentation with the code, and never infer merge or deploy permission |
+| `AGENTS.md` | Managed section | `## Development rules`: agree scope first, follow `ENGINEERING.md`, update the documentation with the code, and never infer merge or deploy permission |
 | The PR template | Managed section | The Summary, Verification, and Documentation impact sections, added to the template GitHub reads first (`.github/pull_request_template.md` when there is none) |
 | `.github/workflows/docs-check.yml`, `.github/scripts/knowledge.py` | Managed files | New broken documentation links and the Documentation impact section, checked on pull requests, and the script they run |
 | `.github/workflows/standards-check.yml`, `.github/scripts/standards.py` | Managed files | The `ENGINEERING.md` checks on pull requests, and the script they run |
@@ -108,9 +109,11 @@ sessions and subagents, to the clone's own exclude file
 session in another clone, a Cloud crew's included, runs `setup.py --exclude`
 before it writes there.
 
-It creates the type labels `Initiative`, `Epic`, and `Task` with `gh` when they
-are missing, with neutral descriptions. When `gh` cannot reach GitHub, it notes
-that labels were not checked and goes on.
+Setup creates no labels. Orchi creates a missing type label, `Initiative`,
+`Epic`, or `Task`, itself when it first files such an Issue
+([workflow](workflow.md#github-signals)). Setup only migrates the earlier
+setup's labels; when `gh` cannot reach GitHub, it notes that labels were not
+checked and goes on.
 
 A second run prints `Nothing to change.`
 
@@ -140,7 +143,10 @@ manifest's record:
   open `Exploration` Issue's title gains `Explore: `, and a `retro` Issue's
   `Lesson: `; a `design` Issue gets a note to start its UI design field with
   `Design Epic:`. A label whose description someone changed is kept, with a
-  note. The type labels' old descriptions are replaced.
+  note. The type labels are kept, and their old descriptions replaced by
+  neutral ones;
+- a `## Development rules` section or PR template section of an earlier
+  version of this setup is updated in place.
 
 Directories left empty are removed. An old file someone edited is left in place
 with a note, except a workflow and its script, which are replaced only as a
@@ -206,9 +212,10 @@ state from standard GitHub signals instead of labels and markers
 | `AGENTS.md` held `## Orchi workflow`, routing work to Orchi | `## Development rules`, which any developer or assistant follows |
 | Setup recorded digests in `.github/orchi/manifest.json` | No record in the repository; setup recognises its versions by digest |
 | Setup wrote Issue forms `.github/ISSUE_TEMPLATE/orchi-*.yml` | The forms live in the plugin, `assets/issues/`, and Orchi builds Issue bodies from them |
-| Setup created nine labels, six of them for the process | Only the type labels `Initiative`, `Epic`, and `Task` |
+| Setup created nine labels, six of them for the process | No labels; Orchi creates a missing type label when it first files such an Issue |
 | A `.gitignore` section ignored `.orchi-tmp/` | The clone's own Git exclude file does |
 | Workflows `orchi-docs.yml` and `orchi-standards.yml`, with a weekly drift run and a `docs/work/` check | `docs-check.yml` and `standards-check.yml` on pull requests; Orchi runs the drift and `docs/work/` checks itself |
+| `## Development rules` told everyone to track work in GitHub Issues and pull requests and to leave taken Issues alone, and setup created the type labels `Initiative`, `Epic`, and `Task` | The section holds no tracking rules and setup creates no labels: tracking work in Issues is Orchi's process, so its rules and the type labels live in the plugin ([github](../plugins/orchi/skills/orchi-core/references/github.md#labels-and-signals)), and other developers track work as they like |
 
 ### Vendored scripts
 
@@ -228,9 +235,12 @@ recognised by the digests in `LEGACY_DIGESTS` or by its manifest.
 
 ### Labels
 
-Setup creates only the type labels. In progress, ready, and needs a plan are read
-from assignees, linked pull requests and branches, sub-issues, and the plan in
-an Issue body, which every developer already sets without knowing Orchi.
+Setup creates no labels. Orchi creates a missing type label itself before it
+files the first Issue of that type, from the colours and descriptions in its
+[GitHub reference](../plugins/orchi/skills/orchi-core/references/github.md#labels-and-signals),
+and never changes a label that exists. In progress, ready, and needs a plan are
+read from assignees, linked pull requests and branches, sub-issues, and the plan
+in an Issue body, which every developer already sets without knowing Orchi.
 
 ### Models
 

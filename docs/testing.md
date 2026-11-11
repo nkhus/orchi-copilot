@@ -45,7 +45,7 @@ The test suite, in `tests/`:
 | Tests | Cover |
 | --- | --- |
 | `test_packaging.py` | The validator's failure cases for the marketplace, the plugin, and the documentation |
-| `test_setup.py` | `setup.py`: dry run, idempotence, refusal of edited files and sections, the Copilot settings merge, `.github/github-app.yml`, workflow opt-out, `--check`, labels, `gh` unavailable, symlinks |
+| `test_setup.py` | `setup.py`: dry run, idempotence, refusal of edited files and sections, the Copilot settings merge, `.github/github-app.yml`, workflow opt-out, `--check`, section updates from earlier versions, label migration without creating labels, `gh` unavailable, symlinks |
 | `test_roles.py` | The custom agents' frontmatter, models, read-only tools, and nesting rules |
 | `test_pool.py` | The entry skill and the pool reference agree on the Copilot app mechanics they use |
 | `test_consistency.py` | Skills, agents, and references agree where a session follows one and not the other |

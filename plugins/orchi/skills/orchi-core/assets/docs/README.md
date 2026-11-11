@@ -5,7 +5,7 @@ contributors and assistants read it before each change. List each page, and
 assign code to the pages that describe it in the Ownership table, which reviews
 read to check that changed code kept its pages current. -->
 
-How this product behaves and is built now. Planned work is in GitHub Issues.
+How this product behaves and is built now; planned work is not described here.
 
 | Page | Covers |
 | --- | --- |

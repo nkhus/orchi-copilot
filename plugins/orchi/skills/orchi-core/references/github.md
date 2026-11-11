@@ -7,12 +7,24 @@ taking work are in [execution](execution.md).
 
 ## Labels and signals
 
-The only labels are the type labels `Initiative`, `Epic`, and `Task`, with
-neutral descriptions; a repository Orchi
-[prepared](pool.md#prepare-the-repository) already has them, plus a PR template
-and the documentation and standards check workflows. Otherwise create a
-missing one deliberately, and invent no other labels. Everything else is a
-standard GitHub signal that anyone can set without knowing about Orchi:
+The only labels are the type labels, and setup does not create them: before
+filing the first Issue of a type, create its label when it is missing, and
+invent no other labels. GitHub matches label names regardless of case, so an
+existing `epic` serves as `Epic`; never recolour or redescribe a label that
+exists.
+
+| Label | Create with |
+| --- | --- |
+| `Initiative` | `gh label create Initiative --color 5319e7 --description "A request delivered through several Epics"` |
+| `Epic` | `gh label create Epic --color 0e8a16 --description "An outcome delivered through several Tasks"` |
+| `Task` | `gh label create Task --color 1d76db --description "One reviewable change"` |
+
+Run it only when `gh label list --search <name>` does not show the label; a
+failure means it exists or you lack the permission, so report the latter. A
+repository Orchi [prepared](pool.md#prepare-the-repository) has only a PR
+template section and the documentation and standards check workflows, none of
+which prescribes Issues. Everything else is a standard GitHub signal that anyone can set without knowing
+about Orchi:
 
 - **Taken:** an assignee, a linked branch, or an open PR that closes the Issue.
   Take work by assigning yourself (`gh issue edit <n> --add-assignee @me`) and
@@ -58,7 +70,8 @@ label, not the title, except an Exploration's `Explore:` prefix.
 
 ## Hierarchy and dependencies
 
-Give each tracked issue exactly one type label.
+Give each tracked issue exactly one type label, created as
+[Labels and signals](#labels-and-signals) says.
 Attach children as native sub-issues
 (`gh issue create --parent <n>` or `gh issue edit <parent> --add-sub-issue <n>`);
 do not keep a second checklist of the same children in the body.

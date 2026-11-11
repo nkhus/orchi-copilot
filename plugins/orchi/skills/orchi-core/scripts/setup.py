@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare a repository's development rules and checks: a rules section, a PR template, checks, and type labels.
+"""Prepare a repository's development rules and checks: a rules section, a PR template section, and checks.
 
 Idempotent: a second run changes nothing. Setup manages whole files and the sections between `managed:begin` and
 `managed:end` markers, and writes no record into the repository: it recognises its own files and sections by the
@@ -28,26 +28,22 @@ DOCS_WORKFLOW = ".github/workflows/docs-check.yml"
 STANDARDS_WORKFLOW = ".github/workflows/standards-check.yml"
 VENDORED = ".github/scripts/"
 EXCLUDE = ".orchi-tmp/"
-LABELS = {
-    "Initiative": ("5319e7", "A request delivered through several Epics"),
-    "Epic": ("0e8a16", "An outcome delivered through several Tasks"),
-    "Task": ("1d76db", "One reviewable change"),
-}
 # GitHub reads the first PR template it finds; extend an existing one instead of adding a rival.
 PR_TEMPLATE_PATHS = (".github/pull_request_template.md", ".github/PULL_REQUEST_TEMPLATE.md", "pull_request_template.md",
                      "PULL_REQUEST_TEMPLATE.md", "docs/pull_request_template.md", "docs/PULL_REQUEST_TEMPLATE.md")
 INSTRUCTIONS_BODY = """## Development rules
 
-- Agree the outcome, approach, and scope with whoever asked before creating branches, Issues, or changes.
-- Track work in GitHub Issues and pull requests; resume from the existing Issue, branch, and PR instead of starting over.
-- An Issue with an assignee, a linked pull request, or a linked branch is taken: leave it to its owner unless they hand it over.
+- Agree the outcome, approach, and scope with whoever asked before making changes.
 - Where `ENGINEERING.md` exists, follow it and run its checks; never weaken a check without recording an exception there.
 - Update the documentation in the same change as the code: `docs/README.md`, when present, maps the pages, and every pull request fills its Documentation impact section.
 - Do not infer permission to merge or deploy from permission to implement."""
 # The sha256 of each earlier version of a managed file or section block, keyed by its path ("AGENTS.md" and
 # "pull_request_template" for the sections). When an asset or a section body changes, add its previous digest here,
 # so setup still recognises and updates the old version.
-PREVIOUS: dict[str, set[str]] = {}
+PREVIOUS: dict[str, set[str]] = {
+    "AGENTS.md": {"c12c66fe875d875f313440d0b5c5ef527c68bfaa24e0b4922e7689d81a6b779f"},
+    "pull_request_template": {"5ada249067ce56d04a96f90c722a019e7253740aa150ac51107755eb18227e6e"},
+}
 
 # The footprint of the earlier setup, which this one migrates.
 LEGACY_MANIFEST = ".github/orchi/manifest.json"
@@ -78,6 +74,13 @@ LEGACY_DIGESTS = {
     "d9aa08a048cc58e1b442bf6f458a0628da655f7cbd6a9d88158cbf4868969ee1",  # orchi-standards.yml
     "b8b0ac4d8b3568a43a31f45ff40d589310321d62c614d08a0d592185afdb88b1",  # knowledge.py
     "9f7952ea3b9ed41f54722661c21b98ed8ef1e4111f10253f589125bd7a998b87",  # standards.py
+}
+# The type labels' neutral descriptions, which replace the earlier setup's. Setup creates no labels: Orchi creates a
+# missing type label itself when it first files such an Issue.
+TYPE_LABELS = {
+    "Initiative": "A request delivered through several Epics",
+    "Epic": "An outcome delivered through several Tasks",
+    "Task": "One reviewable change",
 }
 LEGACY_LABELS = {
     "Initiative": "Orchi: a request decomposed into Epics",
@@ -388,21 +391,18 @@ def gh(*args: str, cwd: Path) -> str:
 
 
 def plan_labels(plan: Plan):
-    """Create the type labels, make their earlier descriptions neutral, and retire the earlier process labels."""
+    """Make the earlier setup's type label descriptions neutral, and retire its process labels."""
     try:
         found = {label["name"].casefold(): label for label in json.loads(
             gh("label", "list", "--limit", "500", "--json", "name,description", cwd=plan.root))}
-        for name, (color, description) in LABELS.items():
+        for name, description in TYPE_LABELS.items():
             label = found.get(name.casefold())
-            if label is None:
-                plan.github.append(("create label " + name, ["label", "create", name, "--color", color,
-                                                             "--description", description]))
-            elif (label.get("description") or "") == LEGACY_LABELS[name]:
+            if label is not None and (label.get("description") or "") == LEGACY_LABELS[name]:
                 plan.github.append(("update the description of label " + name,
                                     ["label", "edit", label["name"], "--description", description]))
         for name, description in LEGACY_LABELS.items():
             label = found.get(name.casefold())
-            if name in LABELS or label is None:
+            if name in TYPE_LABELS or label is None:
                 continue
             if (label.get("description") or "") != description:
                 plan.notes.append(f"label {label['name']} was changed after setup created it; left as it is")
@@ -518,9 +518,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--project", type=Path, default=Path.cwd(), help="repository to prepare (default: current)")
     parser.add_argument("--dry-run", action="store_true", help="list the changes and write nothing")
     parser.add_argument("--check", action="store_true",
-                        help="like --dry-run, but exit 1 when a committed file or a label would change")
+                        help="like --dry-run, but exit 1 when a committed file or an earlier setup's label would change")
     parser.add_argument("--replace", action="store_true", help="overwrite edited managed files and sections")
-    parser.add_argument("--no-labels", dest="labels", action="store_false", help="do not check or change labels")
+    parser.add_argument("--no-labels", dest="labels", action="store_false", help="do not migrate the earlier setup's labels")
     parser.add_argument("--paths", action="store_true", help="print every path setup writes or removes, and exit")
     parser.add_argument("--exclude", action="store_true",
                         help=f"only add {EXCLUDE} to this clone's Git exclude file, and exit")

@@ -60,8 +60,8 @@ first checks, read-only and in its checkout ([Sessions](#sessions) says which), 
 - the repository has a GitHub remote and `gh` is authenticated;
 - the default branch has a commit and GitHub has it;
 - `python3 <orchi-core>/scripts/setup.py --check` exits 0, where `<orchi-core>` is the orchi-core skill's base
-  directory: the type labels, the `AGENTS.md` and PR template sections, and the check workflows with their scripts are
-  in place, and nothing of an earlier setup is left;
+  directory: the `AGENTS.md` and PR template sections and the check workflows with their scripts are in place, and
+  nothing of an earlier setup is left;
 - the setup is on GitHub: no path that `setup.py --paths` prints differs from `origin/<default>`
   (`git diff --quiet origin/<default> -- <paths>`).
 
@@ -69,8 +69,7 @@ When all hold, it goes on. When an open PR from `chore/repository-setup` already
 to merge it and goes on meanwhile. Otherwise it fixes the rest in the same turn without asking the user: it starts one
 general-purpose subagent, the setup agent (`task` with `agent_type: general-purpose`), with the absolute repository
 path, the default branch, the absolute path of the orchi-core skill's base directory, and what failed, waits for its
-report, and checks the result (`gh pr view chore/repository-setup`, `gh label list`). Orchi itself still edits and
-commits nothing. The setup agent:
+report, and checks the result (`gh pr view chore/repository-setup`). Orchi itself still edits and commits nothing. The setup agent:
 
 1. Works in a temporary worktree of `origin/<default>` outside the repository
    (`git worktree add -b chore/repository-setup <temporary folder> origin/<default>`), so the user's checkout and
