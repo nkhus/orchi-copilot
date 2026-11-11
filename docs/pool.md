@@ -128,6 +128,8 @@ Off by default; the user turns it on or off by telling Orchi, and Orchi states
 it in every report. While it is off, crews ask the user, and Orchi merges into
 main only on the user's yes. While it is on, crews ask only Orchi, Orchi decides
 direction, scope, and design as stated assumptions and lists them for the user,
+crews record those decisions in the Issue's decision log as decided on the
+user's behalf, without naming Orchi,
 crews run in `autopilot` mode, and Orchi merges a PR into main when its checks
 pass, its review leaves no unresolved `blocker` or `major`, and its main outcome
 is proven on the real path. In both modes only the user decides money, access
@@ -209,5 +211,5 @@ delete it when it no longer holds.
 | Orchi updates itself through the plugin marketplace on the user's yes and re-invokes busy crews | Plugin files change, while Issues, branches, PRs, and conversations stay | Reinstalling per repository | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3) |
 | Remote control is recommended once and set in `.github/github-app.yml` through a `chore/remote-control` PR that Orchi merges on the user's yes | The app reads it from the repository's configuration, the user must accept it there, and a change to the repository goes through a PR | Toggling it per session; pushing it to the default branch | [nkhus/orchi-copilot#3](https://github.com/nkhus/orchi-copilot/issues/3), [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7) |
 
-| Orchi takes an Issue by assigning the user; a crew's session, role, and Issue live in its assignment and reports, and crew names, the Summary, the mode, and the pool size appear only on the user's board | Other people and assistants must see ordinary GitHub state: an assignee and a branch say the work is taken | Claim lines in Issue bodies, an `in-progress` label, a pinned pool Issue (reversed in [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7)) | [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7) |
+| Orchi takes an Issue by assigning the user; a crew's session, role, and Issue live in its assignment and reports, and crew names, the Summary, the mode, and the pool size appear only on the user's board | Other people and assistants must see ordinary GitHub state: an assignee and a branch say the work is taken | Claim lines in Issue bodies, an `in-progress` label, a pinned pool Issue, `decided by Orchi` in decision logs (reversed in [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7)) | [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7) |
 | Work anyone else took, assigned or with a linked branch or PR, is taken for the pool too, and Orchi takes by itself only Issues that say `Requested by: @<the user's login>` | A person or another assistant may work in the repository without knowing about Orchi | Labels that mark Orchi's own work (reversed in [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7)) | [nkhus/orchi-copilot#7](https://github.com/nkhus/orchi-copilot/issues/7) |

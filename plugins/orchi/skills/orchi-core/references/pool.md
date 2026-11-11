@@ -264,8 +264,8 @@ comps, and what only the user knows (their needs, their users, acceptance thresh
 assumptions. Orchi still researches and designs nothing itself. A crew asks with its recommended answer and its
 reason; Orchi adopts it unless the Issue, its decision log, `PRODUCT.md`, `DESIGN.md`, or an earlier decision of the
 user contradicts it, and answers a question that has no recommendation with `<id> answer: recommend one and proceed`.
-The crew records each such decision in the Issue's decision log as `decided by Orchi in autonomous mode, set by the
-user on <date>`, and Orchi lists the product and design decisions in its next report, one line each, so the user can
+The crew records each such decision in the Issue's decision log as `decided on the user's behalf, delegated by the
+user on <date>`, so the log never names Orchi, and Orchi lists the product and design decisions in its next report, one line each, so the user can
 revisit them.
 
 In both modes a crew decides by itself, and records in the Issue's decision log as `decided by <crew>`, every question
